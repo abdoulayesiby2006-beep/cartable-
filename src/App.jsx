@@ -33,7 +33,7 @@ async function supaCreateProfile(accessToken, profile) {
       "Content-Type": "application/json",
       apikey: SUPABASE_KEY,
       Authorization: `Bearer ${accessToken}`,
-      Prefer: "return=representation",
+      Prefer: "resolution=merge-duplicates,return=representation",
     },
     body: JSON.stringify(profile),
   });
@@ -593,6 +593,10 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
     setProgress(5);
     setScanLabelIdx(0);
     try {
+     await supaCreateProfile(accessToken, {
+     id: currentUser.id,
+     nom_complet: currentUser.email ? currentUser.email.split("@")[0] : "Étudiant",
+   });
       const images = [];
       for (let i = 0; i < files.length; i++) {
         images.push(await readImageFile(files[i]));
