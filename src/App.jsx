@@ -841,11 +841,36 @@ function Checkout({ cart, go, onPaid }) {
   const total = cart.reduce((s, c) => s + c.prix, 0);
   const [method, setMethod] = useState("orange");
   const [phase, setPhase] = useState("select"); // select -> paying -> done
+  const [error, setError] = useState("");
   const selected = PAYMENT_METHODS.find((m) => m.id === method);
 
-  function pay() {
+ async function pay() {
+    setError("");
     setPhase("paying");
-    setTimeout(() => { setPhase("done"); onPaid(); }, 1400);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
+          total_amount: total,
+          description: `Achat de ${cart.length} cours sur Cartable`,
+        }),
+      });
+      const data = await res.json();
+      if (data.response_text) {
+        window.location.href = data.response_text;
+      } else {
+        throw new Error(data.error || data.response_text || "Impossible de créer le paiement.");
+      }
+    } catch (err) {
+      setError(err.message);
+      setPhase("select");
+    }
+  }
   }
 
   return (
@@ -923,6 +948,11 @@ function Checkout({ cart, go, onPaid }) {
             </div>
           )}
 
+       {error && (
+            <p style={{ color: "#fff", background: "var(--coral)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 14, fontWeight: 600 }}>
+              ⚠️ {error}
+            </p>
+          )}
           <button className="ctb-btn ctb-btn-primary" style={{ width: "100%", padding: "14px" }} onClick={pay}>
             Payer {fmt(total)}
           </button>
