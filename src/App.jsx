@@ -587,35 +587,62 @@ function Catalog({ go, courses, cart, onAdd, filieresList }) {
 function CourseDetail({ course, onAdd, inCart, go }) {
   if (!course) return null;
   return (
-    <div style={{ padding: "44px 6vw 80px", maxWidth: 820 }} className="ctb-fade-in">
+    <div style={{ padding: "36px 6vw 80px", maxWidth: 980 }} className="ctb-fade-in">
       <span className="ctb-nav-link" onClick={() => go("catalog")}>← Retour au catalogue</span>
-      <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", gap: 20, flexWrap: "wrap" }}>
-        <div>
-          <span className="ctb-mono" style={{ fontSize: 12, color: "var(--ink-light)" }}>
-            {course.filiere} · {course.niveau}
-          </span>
-          <h1 className="ctb-display" style={{ fontSize: 32, fontWeight: 700, margin: "8px 0" }}>{course.title}</h1>
-          <div style={{ display: "flex", gap: 14, alignItems: "center", color: "var(--ink-light)", fontSize: 14 }}>
-            <span>Par {course.auteur}</span>
-            <span>·</span>
-            <StarRow note={course.note} />
-            <span>·</span>
-            <span>{course.ventes} ventes</span>
-          </div>
+
+      <div style={{ background: "var(--paper2)", borderRadius: 14, padding: "26px 28px", marginTop: 18, marginBottom: 28 }}>
+        <span className="ctb-mono" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.05em" }}>
+          FICHE FORMATION · {course.filiere.toUpperCase()}
+        </span>
+        <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 700, margin: "10px 0 12px" }}>{course.title}</h1>
+        <div style={{ display: "flex", gap: 14, alignItems: "center", color: "var(--ink-light)", fontSize: 14, flexWrap: "wrap" }}>
+          <span>Par {course.auteur}</span>
+          <span>·</span>
+          <StarRow note={course.note} />
+          <span>·</span>
+          <span>{course.ventes} ventes</span>
+          <Stamp text="Certifié par les pairs" />
         </div>
-        <Stamp text="Certifié par les pairs" />
       </div>
 
-      <p style={{ marginTop: 24, fontSize: 15.5, lineHeight: 1.7, color: "var(--ink-light)" }}>{course.blurb}</p>
-
-      <div className="ctb-card" style={{ padding: 24, marginTop: 28, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 28 }} className="ctb-grid-course">
         <div>
-          <div className="ctb-mono" style={{ fontSize: 26, fontWeight: 700 }}>{fmt(course.prix)}</div>
-          <div style={{ fontSize: 12.5, color: "var(--ink-light)" }}>PDF · {course.pages} pages · téléchargement immédiat</div>
+          <h3 className="ctb-display" style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Description</h3>
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: "var(--ink-light)" }}>{course.blurb}</p>
+
+          <h3 className="ctb-display" style={{ fontSize: 16, fontWeight: 700, margin: "26px 0 12px" }}>Informations pratiques</h3>
+          <div className="ctb-card" style={{ padding: 0, overflow: "hidden" }}>
+            {[
+              ["Filière", course.filiere],
+              ["Niveau", course.niveau],
+              ["Format", "PDF"],
+              ["Pages", course.pages],
+            ].map(([label, value], i) => (
+              <div
+                key={label}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "12px 18px",
+                  borderTop: i === 0 ? "none" : "1px solid var(--line)",
+                  fontSize: 13.5,
+                }}
+              >
+                <span style={{ color: "var(--ink-light)" }}>{label}</span>
+                <span style={{ fontWeight: 600 }}>{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <button className="ctb-btn ctb-btn-primary" onClick={() => onAdd(course)}>
-          {inCart ? "Déjà dans le panier ✓" : "Ajouter au panier"}
-        </button>
+
+        <div className="ctb-card" style={{ padding: 24, alignSelf: "start", position: "sticky", top: 96 }}>
+          <div className="ctb-mono" style={{ fontSize: 11, color: "var(--ink-light)" }}>PRIX</div>
+          <div className="ctb-display" style={{ fontSize: 30, fontWeight: 700, margin: "4px 0 4px" }}>{fmt(course.prix)}</div>
+          <div style={{ fontSize: 12.5, color: "var(--ink-light)", marginBottom: 18 }}>Téléchargement immédiat après paiement</div>
+          <button className="ctb-btn ctb-btn-primary" style={{ width: "100%" }} onClick={() => onAdd(course)}>
+            {inCart ? "Déjà dans le panier ✓" : "Ajouter au panier"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -710,14 +737,28 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
     );
   }
 
+  const stepIndex = { upload: 0, form: 1, processing: 2, done: 3, error: 1 }[step];
+  const stepLabels = ["Photos", "Détails", "Publication", "Terminé"];
+
   return (
     <div style={{ padding: "44px 6vw 90px", maxWidth: 640 }} className="ctb-fade-in">
-      <span className="ctb-mono" style={{ fontSize: 12, color: "var(--coral)", fontWeight: 700, letterSpacing: "0.06em" }}>
+      <span className="ctb-mono" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.06em" }}>
         VENDRE UN COURS
       </span>
-      <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 700, margin: "8px 0 26px" }}>
+      <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 700, margin: "8px 0 22px" }}>
         Scannez votre cours en PDF
       </h1>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 30 }}>
+        {stepLabels.map((label, i) => (
+          <div key={label} style={{ flex: 1 }}>
+            <div style={{ height: 4, borderRadius: 999, background: i <= stepIndex ? "var(--gold)" : "var(--line)", marginBottom: 6 }} />
+            <span className="ctb-mono" style={{ fontSize: 10.5, color: i <= stepIndex ? "var(--ink)" : "var(--ink-light)" }}>
+              {i + 1}. {label}
+            </span>
+          </div>
+        ))}
+      </div>
 
       {step === "upload" && (
         <div
@@ -1232,7 +1273,10 @@ export default function App() {
     <div className="ctb-root">
       <style>{FONTS}</style>
 
-      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(250,246,238,0.92)", backdropFilter: "blur(6px)", borderBottom: "1px solid var(--line)" }}>
+      <div style={{ background: "var(--ink)", color: "#fff", fontSize: 12, textAlign: "center", padding: "6px 12px" }} className="ctb-mono">
+        Plateforme officielle des étudiants pour les étudiants
+      </div>
+      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "#fff", borderBottom: "3px solid var(--gold)", boxShadow: "0 1px 3px rgba(15,23,42,0.06)" }}>
         <div style={{ padding: "14px 6vw", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ cursor: "pointer" }} onClick={() => go("home")}><Logo /></div>
           <nav style={{ display: "flex", gap: 26 }} className="ctb-hide-mobile">
@@ -1245,7 +1289,7 @@ export default function App() {
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <button className="ctb-btn ctb-btn-outline" style={{ padding: "8px 16px", fontSize: 13, position: "relative" }} onClick={() => go("cart")}>
               🛒 Panier {cart.length > 0 && (
-                <span className="ctb-mono" style={{ marginLeft: 6, background: "var(--coral)", color: "#fff", borderRadius: 999, padding: "1px 7px", fontSize: 11 }}>
+                <span className="ctb-mono" style={{ marginLeft: 6, background: "var(--error)", color: "#fff", borderRadius: 999, padding: "1px 7px", fontSize: 11 }}>
                   {cart.length}
                 </span>
               )}
@@ -1320,4 +1364,3 @@ export default function App() {
     </div>
   );
 }
- 
