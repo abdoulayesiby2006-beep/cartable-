@@ -44,6 +44,33 @@ async function supaCreateProfile(accessToken, profile) {
   return res.json();
 }
 
+async function supaGetProfile(accessToken, userId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}&select=*`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data[0] || null;
+}
+
+async function supaUpdateProfile(accessToken, userId, patch) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Erreur lors de la mise à jour du profil.");
+  }
+  return res.json();
+}
+
 /* ---------- Scan réel : image(s) -> vrai PDF -> Supabase Storage -> table courses ---------- */
 function loadJsPDF() {
   return new Promise((resolve, reject) => {
@@ -360,16 +387,24 @@ function Stamp({ text, color = "var(--green)", icon = "✓" }) {
   );
 }
 
-function Logo({ size = 22 }) {
+function Logo({ size = 28 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-        <rect x="4" y="10" width="32" height="24" rx="4" fill="var(--ink)" />
-        <rect x="10" y="4" width="8" height="10" rx="2" fill="var(--gold)" />
-        <rect x="22" y="4" width="8" height="10" rx="2" fill="var(--coral)" />
-        <line x1="4" y1="20" x2="36" y2="20" stroke="var(--paper)" strokeWidth="1.5" opacity="0.5" />
+    <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+      <svg width={size} height={size} viewBox="0 0 44 44" fill="none">
+        <path
+          d="M9 16C9 11.0294 13.0294 7 18 7H26C30.9706 7 35 11.0294 35 16V30C35 32.7614 32.7614 35 30 35H14C11.2386 35 9 32.7614 9 30V16Z"
+          fill="var(--gold)"
+        />
+        <path
+          d="M17 7V13C17 15.7614 19.2386 18 22 18C24.7614 18 27 15.7614 27 13V7"
+          stroke="var(--paper)"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+        />
+        <rect x="14.5" y="22" width="15" height="3" rx="1.5" fill="var(--paper)" opacity="0.9" />
+        <rect x="14.5" y="27.5" width="9" height="3" rx="1.5" fill="var(--paper)" opacity="0.6" />
       </svg>
-      <span className="ctb-display" style={{ fontWeight: 700, fontSize: 21 }}>Cartable</span>
+      <span className="ctb-display" style={{ fontWeight: 800, fontSize: 21, color: "var(--ink)" }}>Cartable</span>
     </div>
   );
 }
@@ -1109,6 +1144,123 @@ function Checkout({ cart, go, onPaid }) {
   );
 }
 
+function ProfilePage({ currentUser, accessToken, go }) {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [nom, setNom] = useState("");
+  const [methods, setMethods] = useState([]);
+  const [numeros, setNumeros] = useState({ orange: "", moov: "", wave: "", banque: "" });
+
+  const PAYOUT_METHODS = [
+    { id: "orange", label: "Orange Money", placeholder: "Numéro Orange Money" },
+    { id: "moov", label: "Moov Money", placeholder: "Numéro Moov Money" },
+    { id: "wave", label: "Wave", placeholder: "Numéro Wave" },
+    { id: "banque", label: "Virement bancaire", placeholder: "IBAN / numéro de compte" },
+  ];
+
+  useEffect(() => {
+    supaGetProfile(accessToken, currentUser.id).then((p) => {
+      if (p) {
+        setNom(p.nom_complet || "");
+        setMethods(p.payout_methods || []);
+        setNumeros({
+          orange: p.payout_orange || "",
+          moov: p.payout_moov || "",
+          wave: p.payout_wave || "",
+          banque: p.payout_banque || "",
+        });
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  function toggleMethod(id) {
+    setMethods((m) => (m.includes(id) ? m.filter((x) => x !== id) : [...m, id]));
+  }
+
+  async function save() {
+    setSaving(true);
+    setError("");
+    setSaved(false);
+    try {
+      await supaUpdateProfile(accessToken, currentUser.id, {
+        nom_complet: nom,
+        payout_methods: methods,
+        payout_orange: numeros.orange || null,
+        payout_moov: numeros.moov || null,
+        payout_wave: numeros.wave || null,
+        payout_banque: numeros.banque || null,
+      });
+      setSaved(true);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return <div style={{ padding: "90px 6vw", textAlign: "center", color: "var(--ink-light)" }}>Chargement de votre profil…</div>;
+  }
+
+  return (
+    <div style={{ padding: "44px 6vw 90px", maxWidth: 640 }} className="ctb-fade-in">
+      <h1 className="ctb-display" style={{ fontSize: 28, fontWeight: 800, marginBottom: 6 }}>Mon profil</h1>
+      <p style={{ color: "var(--ink-light)", marginBottom: 28 }}>{currentUser.email}</p>
+
+      <div className="ctb-card" style={{ padding: 24, marginBottom: 22 }}>
+        <h3 className="ctb-display" style={{ fontSize: 16, fontWeight: 700, marginBottom: 14 }}>Informations</h3>
+        <label>
+          <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Nom complet</span>
+          <input className="ctb-input" value={nom} onChange={(e) => setNom(e.target.value)} />
+        </label>
+      </div>
+
+      <div className="ctb-card" style={{ padding: 24, marginBottom: 22 }}>
+        <h3 className="ctb-display" style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Comment recevoir vos paiements</h3>
+        <p style={{ fontSize: 13, color: "var(--ink-light)", marginBottom: 16 }}>
+          Choisissez un ou plusieurs moyens pour être payé quand un étudiant achète un de vos cours.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {PAYOUT_METHODS.map((m) => (
+            <div key={m.id}>
+              <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+                <input type="checkbox" checked={methods.includes(m.id)} onChange={() => toggleMethod(m.id)} />
+                <span style={{ fontSize: 14, fontWeight: 600 }}>{m.label}</span>
+              </label>
+              {methods.includes(m.id) && (
+                <input
+                  className="ctb-input"
+                  style={{ marginTop: 8 }}
+                  placeholder={m.placeholder}
+                  value={numeros[m.id]}
+                  onChange={(e) => setNumeros((n) => ({ ...n, [m.id]: e.target.value }))}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <p style={{ color: "#fff", background: "var(--error)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 16, fontWeight: 600 }}>
+          ⚠️ {error}
+        </p>
+      )}
+      {saved && (
+        <p style={{ color: "#fff", background: "var(--green)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 16, fontWeight: 600 }}>
+          ✓ Profil enregistré
+        </p>
+      )}
+      <button className="ctb-btn ctb-btn-primary" onClick={save} disabled={saving}>
+        {saving ? "Enregistrement…" : "Enregistrer"}
+      </button>
+    </div>
+  );
+}
+
 function AuthModal({ onClose, onAuthed }) {
   const [mode, setMode] = useState("login"); // login | signup
   const [email, setEmail] = useState("");
@@ -1213,6 +1365,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [filieresList, setFilieresList] = useState(FILIERES.filter((f) => f !== "Toutes"));
   const allCourses = [...SEED_COURSES, ...uploaded];
 
@@ -1301,13 +1454,44 @@ export default function App() {
               )}
             </button>
             {currentUser ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span className="ctb-mono ctb-hide-mobile" style={{ fontSize: 12, color: "var(--ink-light)" }}>
-                  {currentUser.email}
-                </span>
-                <button className="ctb-btn ctb-btn-outline" style={{ padding: "8px 14px", fontSize: 13 }} onClick={handleSignOut}>
-                  Déconnexion
+              <div style={{ position: "relative" }}>
+                <button
+                  className="ctb-btn ctb-btn-outline"
+                  style={{ padding: "8px 14px", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}
+                  onClick={() => setShowProfileMenu((s) => !s)}
+                >
+                  <span style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--gold)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700 }}>
+                    {currentUser.email?.[0]?.toUpperCase()}
+                  </span>
+                  <span className="ctb-hide-mobile">{currentUser.email}</span>
+                  <span>▾</span>
                 </button>
+                {showProfileMenu && (
+                  <div
+                    className="ctb-card"
+                    style={{ position: "absolute", right: 0, top: "110%", width: 200, padding: 8, zIndex: 30 }}
+                  >
+                    <div
+                      style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600 }}
+                      onClick={() => { setShowProfileMenu(false); go("profile"); }}
+                    >
+                      👤 Mon profil
+                    </div>
+                    <div
+                      style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600 }}
+                      onClick={() => { setShowProfileMenu(false); go("dashboard"); }}
+                    >
+                      📊 Mon espace vendeur
+                    </div>
+                    <div style={{ height: 1, background: "var(--line)", margin: "6px 0" }} />
+                    <div
+                      style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "var(--error)" }}
+                      onClick={() => { setShowProfileMenu(false); handleSignOut(); }}
+                    >
+                      Déconnexion
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <button className="ctb-btn ctb-btn-primary" style={{ padding: "8px 16px", fontSize: 13 }} onClick={() => setShowAuthModal(true)}>
@@ -1351,6 +1535,15 @@ export default function App() {
               <button className="ctb-btn ctb-btn-primary" onClick={() => setShowAuthModal(true)}>
                 Se connecter
               </button>
+            </div>
+          ))}
+        {view === "profile" &&
+          (currentUser ? (
+            <ProfilePage currentUser={currentUser} accessToken={accessToken} go={go} />
+          ) : (
+            <div style={{ padding: "90px 6vw", textAlign: "center" }} className="ctb-fade-in">
+              <p style={{ fontWeight: 600, marginBottom: 16, fontSize: 16 }}>Connectez-vous pour voir votre profil.</p>
+              <button className="ctb-btn ctb-btn-primary" onClick={() => setShowAuthModal(true)}>Se connecter</button>
             </div>
           ))}
         {view === "cart" && <Cart cart={cart} onRemove={removeFromCart} go={go} onCheckout={() => go("checkout")} />}
