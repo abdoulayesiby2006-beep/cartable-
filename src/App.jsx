@@ -155,6 +155,7 @@ function mapDbCourseToLocal(row) {
   return {
     id: row.id,
     title: row.titre,
+    type_annonce: row.type_annonce || "cours",
     filiere: row.filiere,
     auteur: "Vous",
     niveau: row.niveau || "—",
@@ -162,9 +163,9 @@ function mapDbCourseToLocal(row) {
     pages: row.nombre_pages || 0,
     ventes: 0,
     note: 5,
-    blurb: row.matiere
-      ? `${row.matiere}${details ? " — " + details : ""}`
-      : details || "Votre cours fraîchement scanné et publié.",
+    blurb:
+      row.description ||
+      (row.matiere ? `${row.matiere}${details ? " — " + details : ""}` : details || "Votre annonce fraîchement publiée."),
   };
 }
 
@@ -355,15 +356,25 @@ const COUNTRIES = [
   "Viêt Nam","Yémen","Zambie","Zimbabwe",
 ];
 
+const TYPES = [
+  { id: "cours", label: "Cours", icon: "📚", desc: "Notes de cours et fiches scannées en PDF" },
+  { id: "livre", label: "Livres", icon: "📖", desc: "Livres et manuels scannés en PDF" },
+  { id: "service", label: "Services", icon: "🛠️", desc: "Tutorat, relecture, aide aux devoirs..." },
+];
+
 const SEED_COURSES = [
-  { id: 1, title: "Droit des obligations — Semestre 3", filiere: "Droit", auteur: "Aïcha K.", niveau: "L2", prix: 2500, pages: 84, ventes: 63, note: 4.8, blurb: "Cours complet + fiches de synthèse, annoté par un major de promo." },
-  { id: 2, title: "Microéconomie — Théorie du consommateur", filiere: "Économie", auteur: "Moussa D.", niveau: "L1", prix: 1500, pages: 46, ventes: 121, note: 4.6, blurb: "Graphiques refaits à la main, exercices corrigés en annexe." },
-  { id: 3, title: "Algorithmique & structures de données", filiere: "Informatique", auteur: "Fatoumata S.", niveau: "L2", prix: 3000, pages: 112, ventes: 205, note: 4.9, blurb: "TD corrigés en Python, schémas de complexité inclus." },
-  { id: 4, title: "Anatomie du système cardiovasculaire", filiere: "Médecine", auteur: "Ibrahim T.", niveau: "L1", prix: 3500, pages: 68, ventes: 88, note: 4.7, blurb: "Planches annotées, mnémotechniques testées en amphi." },
-  { id: 5, title: "Business English — Négociation", filiere: "Anglais", auteur: "Kadiatou B.", niveau: "L3", prix: 2000, pages: 39, ventes: 54, note: 4.5, blurb: "Vocabulaire, scripts de dialogue et cas pratiques." },
-  { id: 6, title: "Algèbre linéaire — Matrices & espaces vectoriels", filiere: "Maths", auteur: "Seydou C.", niveau: "L1", prix: 1800, pages: 57, ventes: 97, note: 4.6, blurb: "Démonstrations détaillées pas à pas, exercices type examen." },
-  { id: 7, title: "Droit constitutionnel comparé", filiere: "Droit", auteur: "Aïcha K.", niveau: "L1", prix: 2200, pages: 71, ventes: 40, note: 4.4, blurb: "Comparatif Mali / France / Sénégal, utile pour les dissertations." },
-  { id: 8, title: "Bases de données relationnelles — SQL", filiere: "Informatique", auteur: "Oumar N.", niveau: "L2", prix: 2800, pages: 65, ventes: 142, note: 4.8, blurb: "Modélisation MCD/MLD + requêtes SQL corrigées." },
+  { id: 1, title: "Droit des obligations — Semestre 3", type_annonce: "cours", filiere: "Droit", auteur: "Aïcha K.", niveau: "L2", prix: 2500, pages: 84, ventes: 63, note: 4.8, blurb: "Cours complet + fiches de synthèse, annoté par un major de promo." },
+  { id: 2, title: "Microéconomie — Théorie du consommateur", type_annonce: "cours", filiere: "Économie", auteur: "Moussa D.", niveau: "L1", prix: 1500, pages: 46, ventes: 121, note: 4.6, blurb: "Graphiques refaits à la main, exercices corrigés en annexe." },
+  { id: 3, title: "Algorithmique & structures de données", type_annonce: "cours", filiere: "Informatique", auteur: "Fatoumata S.", niveau: "L2", prix: 3000, pages: 112, ventes: 205, note: 4.9, blurb: "TD corrigés en Python, schémas de complexité inclus." },
+  { id: 4, title: "Anatomie du système cardiovasculaire", type_annonce: "cours", filiere: "Médecine", auteur: "Ibrahim T.", niveau: "L1", prix: 3500, pages: 68, ventes: 88, note: 4.7, blurb: "Planches annotées, mnémotechniques testées en amphi." },
+  { id: 5, title: "Business English — Négociation", type_annonce: "cours", filiere: "Anglais", auteur: "Kadiatou B.", niveau: "L3", prix: 2000, pages: 39, ventes: 54, note: 4.5, blurb: "Vocabulaire, scripts de dialogue et cas pratiques." },
+  { id: 6, title: "Algèbre linéaire — Matrices & espaces vectoriels", type_annonce: "cours", filiere: "Maths", auteur: "Seydou C.", niveau: "L1", prix: 1800, pages: 57, ventes: 97, note: 4.6, blurb: "Démonstrations détaillées pas à pas, exercices type examen." },
+  { id: 7, title: "Droit constitutionnel comparé", type_annonce: "cours", filiere: "Droit", auteur: "Aïcha K.", niveau: "L1", prix: 2200, pages: 71, ventes: 40, note: 4.4, blurb: "Comparatif Mali / France / Sénégal, utile pour les dissertations." },
+  { id: 8, title: "Bases de données relationnelles — SQL", type_annonce: "cours", filiere: "Informatique", auteur: "Oumar N.", niveau: "L2", prix: 2800, pages: 65, ventes: 142, note: 4.8, blurb: "Modélisation MCD/MLD + requêtes SQL corrigées." },
+  { id: 9, title: "Manuel de microéconomie (édition complète)", type_annonce: "livre", filiere: "Économie", auteur: "Bibliothèque FSEG", niveau: "L1-L2", prix: 4000, pages: 312, ventes: 22, note: 4.7, blurb: "Manuel de référence scanné intégralement, très demandé en début de semestre." },
+  { id: 10, title: "Code civil annoté", type_annonce: "livre", filiere: "Droit", auteur: "Bibliothèque Droit", niveau: "Toutes années", prix: 3500, pages: 480, ventes: 35, note: 4.9, blurb: "Édition annotée avec la jurisprudence récente, format PDF consultable hors-ligne." },
+  { id: 11, title: "Aide aux devoirs — Mathématiques L1/L2", type_annonce: "service", filiere: "Maths", auteur: "Seydou C.", niveau: "L1-L2", prix: 3000, pages: 0, ventes: 18, note: 4.8, blurb: "Séance de tutorat individuel d'une heure, en visio ou en présentiel selon la ville." },
+  { id: 12, title: "Relecture et correction de mémoire", type_annonce: "service", filiere: "Anglais", auteur: "Kadiatou B.", niveau: "Toutes années", prix: 5000, pages: 0, ventes: 9, note: 4.9, blurb: "Relecture orthographique et stylistique de votre mémoire, jusqu'à 40 pages." },
 ];
 
 const PAYMENT_METHODS = [
@@ -419,6 +430,7 @@ function StarRow({ note }) {
 
 /* ---------- Course card ---------- */
 function CourseCard({ course, onOpen, onAdd, inCart }) {
+  const typeInfo = TYPES.find((t) => t.id === course.type_annonce) || TYPES[0];
   return (
     <div
       className="ctb-card ctb-fade-in"
@@ -437,7 +449,7 @@ function CourseCard({ course, onOpen, onAdd, inCart }) {
             fontWeight: 600,
           }}
         >
-          {course.filiere} · {course.niveau}
+          {typeInfo.icon} {course.filiere} · {course.niveau}
         </span>
         {course.ventes > 100 && <Stamp text="Populaire" color="var(--coral)" icon="★" />}
       </div>
@@ -448,7 +460,7 @@ function CourseCard({ course, onOpen, onAdd, inCart }) {
       <div style={{ fontSize: 12.5, color: "var(--ink-light)", display: "flex", gap: 10 }}>
         <span>{course.auteur}</span>
         <span>·</span>
-        <span>{course.pages} pages</span>
+        {course.type_annonce === "service" ? <span>Service</span> : <span>{course.pages} pages</span>}
         <span>·</span>
         <StarRow note={course.note} />
       </div>
@@ -467,11 +479,11 @@ function CourseCard({ course, onOpen, onAdd, inCart }) {
 }
 
 /* ---------- Views ---------- */
-function Home({ go, courses }) {
+function Home({ go, courses, openCatalog }) {
   const top = courses.slice(0, 3);
   const articles = [
-    { icon: "📖", tag: "Découvrir", title: "Comment fonctionne Cartable ?", text: "Scannez, publiez, vendez : le principe en 3 étapes simples entre étudiants.", action: () => go("scan") },
-    { icon: "🔎", tag: "Trouver un cours", title: "Parcourir tout le catalogue", text: "Des cours vérifiés par filière, pays et université, prêts à télécharger.", action: () => go("catalog") },
+    { icon: "📖", tag: "Découvrir", title: "Comment fonctionne Cartable ?", text: "Scannez, publiez, vendez : le principe en 3 étapes simples entre étudiants.", action: () => go("how") },
+    { icon: "🔎", tag: "Trouver un cours", title: "Parcourir tout le catalogue", text: "Des cours vérifiés par filière, pays et université, prêts à télécharger.", action: () => openCatalog("tous") },
     { icon: "💶", tag: "Vendre", title: "Publier votre premier cours", text: "Photographiez vos pages, fixez votre prix, gardez 90% de chaque vente.", action: () => go("scan") },
   ];
   return (
@@ -479,7 +491,7 @@ function Home({ go, courses }) {
       <div style={{ background: "var(--gold)", color: "#fff", padding: "14px 6vw" }}>
         <span style={{ fontSize: 13.5, fontWeight: 600 }}>
           📣 Nouveau — les étudiants peuvent maintenant ajouter leur propre filière.{" "}
-          <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("scan")}>En savoir plus →</span>
+          <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("how")}>En savoir plus →</span>
         </span>
       </div>
 
@@ -512,6 +524,34 @@ function Home({ go, courses }) {
               <div style={{ fontSize: 12, color: "var(--ink-light)" }}>note moyenne</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section style={{ background: "#fff", padding: "10px 6vw 52px" }}>
+        <h2 className="ctb-display" style={{ fontSize: 26, fontWeight: 800, marginBottom: 20, color: "var(--ink)" }}>Explorez par catégorie</h2>
+        <div className="ctb-grid-course" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
+          {TYPES.map((t) => (
+            <div
+              key={t.id}
+              className="ctb-card ctb-fade-in"
+              style={{ padding: 24, cursor: "pointer", display: "flex", gap: 16, alignItems: "flex-start" }}
+              onClick={() => openCatalog(t.id)}
+            >
+              <span style={{ fontSize: 32 }}>{t.icon}</span>
+              <div>
+                <h3 className="ctb-display" style={{ fontSize: 17, fontWeight: 800, margin: "0 0 6px", color: "var(--gold)" }}>{t.label}</h3>
+                <p style={{ fontSize: 13, color: "var(--ink-light)", lineHeight: 1.5, margin: 0 }}>{t.desc}</p>
+                {t.id === "service" && (
+                  <span
+                    style={{ fontSize: 12.5, fontWeight: 700, color: "var(--gold)", textDecoration: "underline", display: "inline-block", marginTop: 8 }}
+                    onClick={(e) => { e.stopPropagation(); go("publish-service"); }}
+                  >
+                    Proposer un service →
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -568,22 +608,47 @@ function Home({ go, courses }) {
   );
 }
 
-function Catalog({ go, courses, cart, onAdd, filieresList }) {
+function Catalog({ go, courses, cart, onAdd, filieresList, typeFilter, setTypeFilter }) {
   const [filiere, setFiliere] = useState("Toutes");
   const [q, setQ] = useState("");
   const chips = ["Toutes", ...filieresList];
   const filtered = courses.filter(
-    (c) => (filiere === "Toutes" || c.filiere === filiere) && c.title.toLowerCase().includes(q.toLowerCase())
+    (c) =>
+      (typeFilter === "tous" || c.type_annonce === typeFilter) &&
+      (filiere === "Toutes" || c.filiere === filiere) &&
+      c.title.toLowerCase().includes(q.toLowerCase())
   );
   return (
     <div style={{ padding: "40px 6vw 80px" }} className="ctb-fade-in">
-      <h1 className="ctb-display" style={{ fontSize: 32, fontWeight: 700, marginBottom: 6 }}>Catalogue</h1>
-      <p style={{ color: "var(--ink-light)", marginBottom: 24 }}>{filtered.length} cours disponibles</p>
+      <h1 className="ctb-display" style={{ fontSize: 32, fontWeight: 700, marginBottom: 18 }}>Catalogue</h1>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {[{ id: "tous", label: "Tout", icon: "🗂️" }, ...TYPES].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTypeFilter(t.id)}
+            className="ctb-btn"
+            style={{
+              borderRadius: 10,
+              padding: "10px 18px",
+              fontSize: 13.5,
+              border: typeFilter === t.id ? "2px solid var(--gold)" : "1.5px solid var(--line)",
+              background: typeFilter === t.id ? "var(--paper2)" : "#fff",
+              color: "var(--ink)",
+              fontWeight: 700,
+            }}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      <p style={{ color: "var(--ink-light)", marginBottom: 24 }}>{filtered.length} annonce(s) disponible(s)</p>
       <div style={{ display: "flex", gap: 14, marginBottom: 26, flexWrap: "wrap" }}>
         <input
           className="ctb-input"
           style={{ maxWidth: 320 }}
-          placeholder="Rechercher un cours…"
+          placeholder="Rechercher…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -696,6 +761,7 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
   const [scanLabelIdx, setScanLabelIdx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [title, setTitle] = useState("");
+  const [typeAnnonce, setTypeAnnonce] = useState("cours");
   const [filiere, setFiliere] = useState(filieresList[0] || "Informatique");
   const [addingFiliere, setAddingFiliere] = useState(false);
   const [newFiliere, setNewFiliere] = useState("");
@@ -749,6 +815,7 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
       const created = await supaCreateCourse(accessToken, {
         vendeur_id: currentUser.id,
         titre: title || "Cours scanné sans titre",
+        type_annonce: typeAnnonce,
         filiere,
         pays,
         universite: universite || null,
@@ -839,6 +906,31 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
         <div className="ctb-card" style={{ padding: 28 }}>
           <Stamp text={files.length + " page(s) prête(s)"} />
           <div style={{ marginTop: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+            <label>
+              <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Type d'annonce</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[{ id: "cours", label: "📚 Cours" }, { id: "livre", label: "📖 Livre" }].map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setTypeAnnonce(t.id)}
+                    className="ctb-btn"
+                    style={{
+                      flex: 1,
+                      borderRadius: 10,
+                      padding: "10px",
+                      fontSize: 13.5,
+                      fontWeight: 700,
+                      border: typeAnnonce === t.id ? "2px solid var(--gold)" : "1.5px solid var(--line)",
+                      background: typeAnnonce === t.id ? "var(--paper2)" : "#fff",
+                      color: "var(--ink)",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </label>
             <label>
               <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Titre du cours</span>
               <input className="ctb-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex : Thermodynamique — Chapitre 2" />
@@ -935,6 +1027,109 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function PublishService({ addUploadedCourse, go, currentUser, accessToken, onRequireLogin, filieresList, addFiliere }) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [filiere, setFiliere] = useState(filieresList[0] || "Informatique");
+  const [pays, setPays] = useState("Mali");
+  const [prix, setPrix] = useState(3000);
+  const [step, setStep] = useState("form"); // form -> done -> error
+  const [error, setError] = useState("");
+
+  async function publish() {
+    setError("");
+    try {
+      await supaCreateProfile(accessToken, {
+        id: currentUser.id,
+        nom_complet: currentUser.email ? currentUser.email.split("@")[0] : "Étudiant",
+      });
+      const created = await supaCreateCourse(accessToken, {
+        vendeur_id: currentUser.id,
+        titre: title || "Service sans titre",
+        type_annonce: "service",
+        filiere,
+        pays,
+        description,
+        prix_fcfa: Number(prix) || 0,
+        statut: "publie",
+      });
+      addUploadedCourse(mapDbCourseToLocal(created[0]));
+      setStep("done");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  if (!currentUser) {
+    return (
+      <div style={{ padding: "90px 6vw", textAlign: "center" }} className="ctb-fade-in">
+        <p style={{ fontWeight: 600, marginBottom: 16, fontSize: 16 }}>Connectez-vous pour proposer un service.</p>
+        <button className="ctb-btn ctb-btn-primary" onClick={onRequireLogin}>Se connecter</button>
+      </div>
+    );
+  }
+
+  if (step === "done") {
+    return (
+      <div style={{ padding: "44px 6vw 90px", maxWidth: 560 }} className="ctb-fade-in">
+        <div className="ctb-card" style={{ padding: 32, textAlign: "center" }}>
+          <Stamp text="Publié avec succès" />
+          <h3 className="ctb-display" style={{ fontSize: 22, margin: "16px 0 8px" }}>Votre service est en ligne</h3>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18 }}>
+            <button className="ctb-btn ctb-btn-outline" onClick={() => { setStep("form"); setTitle(""); setDescription(""); }}>
+              Proposer un autre service
+            </button>
+            <button className="ctb-btn ctb-btn-primary" onClick={() => go("dashboard")}>Voir mon espace</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: "44px 6vw 90px", maxWidth: 560 }} className="ctb-fade-in">
+      <span className="ctb-mono" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.06em" }}>
+        PROPOSER UN SERVICE
+      </span>
+      <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 800, margin: "8px 0 22px" }}>
+        Décrivez votre service
+      </h1>
+      <div className="ctb-card" style={{ padding: 28 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <label>
+            <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Titre</span>
+            <input className="ctb-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex : Aide aux devoirs en Maths" />
+          </label>
+          <label>
+            <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Description</span>
+            <textarea className="ctb-input" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Expliquez en quoi consiste votre service, la durée, les modalités..." />
+          </label>
+          <label>
+            <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Filière liée</span>
+            <select className="ctb-input" value={filiere} onChange={(e) => setFiliere(e.target.value)}>
+              {filieresList.map((f) => <option key={f}>{f}</option>)}
+            </select>
+          </label>
+          <label>
+            <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Pays</span>
+            <select className="ctb-input" value={pays} onChange={(e) => setPays(e.target.value)}>
+              {COUNTRIES.map((c) => <option key={c}>{c}</option>)}
+            </select>
+          </label>
+          <label>
+            <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Prix (FCFA)</span>
+            <input className="ctb-input" type="number" value={prix} onChange={(e) => setPrix(e.target.value)} />
+          </label>
+          {error && (
+            <p style={{ color: "#fff", background: "var(--error)", padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 600 }}>⚠️ {error}</p>
+          )}
+          <button className="ctb-btn ctb-btn-primary" onClick={publish}>Publier le service</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1140,6 +1335,61 @@ function Checkout({ cart, go, onPaid }) {
           <button className="ctb-btn ctb-btn-primary" onClick={() => go("catalog")}>Retour au catalogue</button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ConsentBanner({ onAccept }) {
+  const [checked, setChecked] = useState(false);
+  return (
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 100, background: "var(--ink)", color: "#fff", padding: "18px 6vw", boxShadow: "0 -4px 20px rgba(0,0,0,0.2)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 620 }}>
+          <p style={{ fontWeight: 700, marginBottom: 6, fontSize: 14.5 }}>🔒 Avant de continuer</p>
+          <p style={{ fontSize: 13, opacity: 0.85, lineHeight: 1.5, marginBottom: 10 }}>
+            Cartable utilise des cookies nécessaires au fonctionnement du site (connexion, panier) et vous demande de confirmer que vous avez pris connaissance de nos règles d'utilisation avant de continuer.
+          </p>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+            <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+            J'ai lu et j'accepte les conditions d'utilisation et la politique de cookies
+          </label>
+        </div>
+        <button
+          className="ctb-btn ctb-btn-gold"
+          disabled={!checked}
+          style={{ opacity: checked ? 1 : 0.5, cursor: checked ? "pointer" : "not-allowed" }}
+          onClick={onAccept}
+        >
+          Continuer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function HowItWorks({ go }) {
+  return (
+    <div style={{ padding: "48px 6vw 90px", maxWidth: 780 }} className="ctb-fade-in">
+      <h1 className="ctb-display" style={{ fontSize: 32, fontWeight: 800, marginBottom: 10 }}>Comment fonctionne Cartable ?</h1>
+      <p style={{ color: "var(--ink-light)", fontSize: 15.5, lineHeight: 1.7, marginBottom: 30 }}>
+        Cartable est une plateforme où les étudiants vendent et achètent des cours, des livres
+        et des services entre eux, en toute simplicité.
+      </p>
+      {[
+        ["1. Scannez ou publiez", "Photographiez les pages d'un cours ou d'un livre pour en faire un PDF, ou décrivez un service que vous proposez (aide aux devoirs, relecture, tutorat...)."],
+        ["2. Fixez votre prix", "Vous choisissez librement le prix de vente. Cartable prélève une commission de 10% ; vous gardez 90%."],
+        ["3. Recevez vos paiements", "Choisissez dans votre profil comment être payé : Orange Money, Moov Money, Wave ou virement bancaire."],
+        ["4. Les autres étudiants achètent", "Vos annonces apparaissent dans le catalogue, classées par filière, pays et catégorie (cours, livre ou service)."],
+      ].map(([title, text]) => (
+        <div key={title} className="ctb-card" style={{ padding: 22, marginBottom: 14 }}>
+          <h3 className="ctb-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, color: "var(--gold)" }}>{title}</h3>
+          <p style={{ fontSize: 14, color: "var(--ink-light)", lineHeight: 1.6 }}>{text}</p>
+        </div>
+      ))}
+      <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap" }}>
+        <button className="ctb-btn ctb-btn-primary" onClick={() => go("scan")}>Publier un cours ou un livre</button>
+        <button className="ctb-btn ctb-btn-outline" onClick={() => go("catalog")}>Parcourir le catalogue</button>
+      </div>
     </div>
   );
 }
@@ -1366,6 +1616,13 @@ export default function App() {
   const [accessToken, setAccessToken] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [catalogTypeFilter, setCatalogTypeFilter] = useState("tous");
+  const [consentGiven, setConsentGiven] = useState(false);
+
+  function openCatalog(type) {
+    setCatalogTypeFilter(type);
+    go("catalog");
+  }
   const [filieresList, setFilieresList] = useState(FILIERES.filter((f) => f !== "Toutes"));
   const allCourses = [...SEED_COURSES, ...uploaded];
 
@@ -1503,8 +1760,19 @@ export default function App() {
       </header>
 
       <main>
-        {view === "home" && <Home go={go} courses={allCourses} />}
-        {view === "catalog" && <Catalog go={go} courses={allCourses} cart={cart} onAdd={addToCart} filieresList={filieresList} />}
+        {view === "home" && <Home go={go} courses={allCourses} openCatalog={openCatalog} />}
+        {view === "how" && <HowItWorks go={go} />}
+        {view === "catalog" && (
+          <Catalog
+            go={go}
+            courses={allCourses}
+            cart={cart}
+            onAdd={addToCart}
+            filieresList={filieresList}
+            typeFilter={catalogTypeFilter}
+            setTypeFilter={setCatalogTypeFilter}
+          />
+        )}
         {view === "course" && (
           <CourseDetail
             course={selectedCourse}
@@ -1515,6 +1783,17 @@ export default function App() {
         )}
         {view === "scan" && (
           <ScanCourse
+            addUploadedCourse={addUploadedCourse}
+            go={go}
+            currentUser={currentUser}
+            accessToken={accessToken}
+            onRequireLogin={() => setShowAuthModal(true)}
+            filieresList={filieresList}
+            addFiliere={addFiliere}
+          />
+        )}
+        {view === "publish-service" && (
+          <PublishService
             addUploadedCourse={addUploadedCourse}
             go={go}
             currentUser={currentUser}
@@ -1551,6 +1830,7 @@ export default function App() {
       </main>
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onAuthed={handleAuthed} />}
+      {!consentGiven && <ConsentBanner onAccept={() => setConsentGiven(true)} />}
 
       <footer style={{ borderTop: "1px solid var(--line)", padding: "36px 6vw", marginTop: 40 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
