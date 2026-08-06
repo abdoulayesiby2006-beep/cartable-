@@ -182,8 +182,8 @@ const FONTS = `
   --ink-light:#64748B;
   --paper:#F8FAFC;
   --paper2:#EEF3FF;
-  --gold:#2563EB;
-  --coral:#2563EB;
+  --gold:#000091;
+  --coral:#000091;
   --error:#DC2626;
   --green:#16A34A;
   --line:#E2E8F0;
@@ -434,93 +434,99 @@ function CourseCard({ course, onOpen, onAdd, inCart }) {
 /* ---------- Views ---------- */
 function Home({ go, courses }) {
   const top = courses.slice(0, 3);
+  const articles = [
+    { icon: "📖", tag: "Découvrir", title: "Comment fonctionne Cartable ?", text: "Scannez, publiez, vendez : le principe en 3 étapes simples entre étudiants.", action: () => go("scan") },
+    { icon: "🔎", tag: "Trouver un cours", title: "Parcourir tout le catalogue", text: "Des cours vérifiés par filière, pays et université, prêts à télécharger.", action: () => go("catalog") },
+    { icon: "💶", tag: "Vendre", title: "Publier votre premier cours", text: "Photographiez vos pages, fixez votre prix, gardez 90% de chaque vente.", action: () => go("scan") },
+  ];
   return (
     <div>
-      <section style={{ padding: "72px 6vw 56px", display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 48, alignItems: "center" }}>
-        <div className="ctb-fade-in">
-          <span className="ctb-mono" style={{ fontSize: 12, color: "var(--gold)", fontWeight: 700, letterSpacing: "0.08em" }}>
-            LE MARCHÉ DES COURS ENTRE ÉTUDIANTS
-          </span>
-          <h1 className="ctb-display ctb-hero-title" style={{ fontSize: 54, lineHeight: 1.05, margin: "14px 0 20px", fontWeight: 700 }}>
-            Le cartable qui <span style={{ color: "var(--coral)" }}>rapporte</span>.
-          </h1>
-          <p style={{ fontSize: 16.5, color: "var(--ink-light)", maxWidth: 480, lineHeight: 1.6 }}>
-            Scannez vos meilleurs cours, vendez-les à d'autres étudiants en quelques minutes,
-            et achetez ceux qui vous manquent. Simple, sérieux, entre étudiants.
-          </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
-            <button className="ctb-btn ctb-btn-primary" onClick={() => go("catalog")}>Parcourir le catalogue</button>
-            <button className="ctb-btn ctb-btn-coral" onClick={() => go("scan")}>📷 Scanner un cours</button>
-          </div>
-          <div style={{ display: "flex", gap: 22, marginTop: 34 }}>
-            <div>
-              <div className="ctb-display" style={{ fontSize: 26, fontWeight: 700 }}>810+</div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-light)" }}>cours en vente</div>
-            </div>
-            <div>
-              <div className="ctb-display" style={{ fontSize: 26, fontWeight: 700 }}>90%</div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-light)" }}>reversés au vendeur</div>
-            </div>
-            <div>
-              <div className="ctb-display" style={{ fontSize: 26, fontWeight: 700 }}>4.7★</div>
-              <div style={{ fontSize: 12.5, color: "var(--ink-light)" }}>note moyenne</div>
+      <div style={{ background: "var(--gold)", color: "#fff", padding: "14px 6vw" }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600 }}>
+          📣 Nouveau — les étudiants peuvent maintenant ajouter leur propre filière.{" "}
+          <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("scan")}>En savoir plus →</span>
+        </span>
+      </div>
+
+      <section style={{ background: "#fff", padding: "52px 6vw 56px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1.15fr 0.85fr", gap: 44, alignItems: "center" }} className="ctb-grid-course">
+          <div className="ctb-fade-in">
+            <h1 className="ctb-display ctb-hero-title" style={{ fontSize: 42, lineHeight: 1.15, margin: "0 0 18px", fontWeight: 800, color: "var(--ink)" }}>
+              Vendez vos cours. Trouvez ceux qui vous manquent.
+            </h1>
+            <p style={{ fontSize: 16, color: "var(--ink-light)", maxWidth: 480, lineHeight: 1.6 }}>
+              Cartable met en relation les étudiants qui veulent vendre leurs notes de cours
+              avec ceux qui en ont besoin — partout, dans toutes les filières.
+            </p>
+            <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap" }}>
+              <button className="ctb-btn ctb-btn-primary" onClick={() => go("catalog")}>Parcourir le catalogue</button>
+              <button className="ctb-btn ctb-btn-outline" onClick={() => go("scan")}>Scanner un cours</button>
             </div>
           </div>
-        </div>
-        <div className="ctb-fade-in ctb-hide-mobile" style={{ position: "relative", height: 380 }}>
-          <div style={{ position: "absolute", top: 0, right: 20, width: 230, transform: "rotate(4deg)" }} className="ctb-card">
-            <div style={{ padding: 16 }}>
-              <span className="ctb-mono" style={{ fontSize: 10, color: "var(--ink-light)" }}>DROIT · L2</span>
-              <h4 className="ctb-display" style={{ fontSize: 15, margin: "6px 0" }}>Droit des obligations</h4>
-              <Stamp text="Certifié pairs" />
+          <div className="ctb-fade-in ctb-hide-mobile" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div className="ctb-card" style={{ padding: 20, gridColumn: "1 / -1" }}>
+              <div className="ctb-display" style={{ fontSize: 30, fontWeight: 800, color: "var(--gold)" }}>810+</div>
+              <div style={{ fontSize: 12.5, color: "var(--ink-light)" }}>cours en vente sur la plateforme</div>
             </div>
-          </div>
-          <div style={{ position: "absolute", top: 90, left: 10, width: 240, transform: "rotate(-5deg)" }} className="ctb-card">
-            <div style={{ padding: 16 }}>
-              <span className="ctb-mono" style={{ fontSize: 10, color: "var(--ink-light)" }}>INFO · L2</span>
-              <h4 className="ctb-display" style={{ fontSize: 15, margin: "6px 0" }}>Algorithmique & structures</h4>
-              <Stamp text="Populaire" color="var(--coral)" icon="★" />
+            <div className="ctb-card" style={{ padding: 20 }}>
+              <div className="ctb-display" style={{ fontSize: 24, fontWeight: 800, color: "var(--gold)" }}>90%</div>
+              <div style={{ fontSize: 12, color: "var(--ink-light)" }}>reversés au vendeur</div>
             </div>
-          </div>
-          <div style={{ position: "absolute", bottom: 0, right: 40, width: 220, transform: "rotate(-2deg)" }} className="ctb-card">
-            <div style={{ padding: 16 }}>
-              <span className="ctb-mono" style={{ fontSize: 10, color: "var(--ink-light)" }}>ÉCO · L1</span>
-              <h4 className="ctb-display" style={{ fontSize: 15, margin: "6px 0" }}>Microéconomie</h4>
-              <Stamp text="Certifié pairs" />
+            <div className="ctb-card" style={{ padding: 20 }}>
+              <div className="ctb-display" style={{ fontSize: 24, fontWeight: 800, color: "var(--gold)" }}>4.7★</div>
+              <div style={{ fontSize: 12, color: "var(--ink-light)" }}>note moyenne</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section style={{ padding: "40px 6vw 80px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
-          <h2 className="ctb-display" style={{ fontSize: 26, fontWeight: 600 }}>Les mieux notés</h2>
+      <section style={{ background: "var(--paper2)", padding: "56px 6vw" }}>
+        <h2 className="ctb-display" style={{ fontSize: 32, fontWeight: 800, marginBottom: 28, color: "var(--ink)" }}>Bien démarrer sur Cartable</h2>
+        <div className="ctb-grid-course" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 22 }}>
+          {articles.map((a, i) => (
+            <div
+              key={a.title}
+              className="ctb-card ctb-fade-in"
+              style={{ padding: 0, overflow: "hidden", cursor: "pointer" }}
+              onClick={a.action}
+            >
+              <div
+                style={{
+                  height: 140,
+                  background: [
+                    "linear-gradient(135deg,#000091,#2F6FED)",
+                    "linear-gradient(135deg,#1E3A8A,#5B8DEF)",
+                    "linear-gradient(135deg,#0B1E52,#000091)",
+                  ][i % 3],
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 48,
+                }}
+              >
+                {a.icon}
+              </div>
+              <div style={{ padding: 20 }}>
+                <span className="ctb-mono" style={{ fontSize: 11, color: "var(--ink-light)", fontWeight: 700, letterSpacing: "0.04em" }}>
+                  {a.tag.toUpperCase()}
+                </span>
+                <h3 className="ctb-display" style={{ fontSize: 19, fontWeight: 800, margin: "8px 0", color: "var(--gold)" }}>{a.title}</h3>
+                <p style={{ fontSize: 13.5, color: "var(--ink-light)", lineHeight: 1.5 }}>{a.text}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ background: "#fff", padding: "56px 6vw 80px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+          <h2 className="ctb-display" style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)" }}>Les mieux notés</h2>
           <span className="ctb-nav-link" onClick={() => go("catalog")}>Voir tout le catalogue →</span>
         </div>
         <div className="ctb-grid-course" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
           {top.map((c) => (
             <CourseCard key={c.id} course={c} onOpen={(course) => go("course", course)} onAdd={() => {}} />
           ))}
-        </div>
-      </section>
-
-      <section style={{ background: "var(--ink)", color: "var(--paper)", padding: "60px 6vw" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 32 }} className="ctb-grid-course">
-          <div>
-            <div className="ctb-mono" style={{ color: "var(--gold)", fontSize: 13 }}>01 — SCANNEZ</div>
-            <h3 className="ctb-display" style={{ fontSize: 20, margin: "10px 0" }}>Vos cours en PDF</h3>
-            <p style={{ fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}>Photographiez vos pages, on les transforme en PDF propre et compressé, prêt à vendre.</p>
-          </div>
-          <div>
-            <div className="ctb-mono" style={{ color: "var(--gold)", fontSize: 13 }}>02 — FIXEZ VOTRE PRIX</div>
-            <h3 className="ctb-display" style={{ fontSize: 20, margin: "10px 0" }}>Vous gardez 90%</h3>
-            <p style={{ fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}>Cartable prélève seulement 10% de commission sur chaque vente. Le reste est à vous.</p>
-          </div>
-          <div>
-            <div className="ctb-mono" style={{ color: "var(--gold)", fontSize: 13 }}>03 — ENCAISSEZ</div>
-            <h3 className="ctb-display" style={{ fontSize: 20, margin: "10px 0" }}>Carte ou Mobile Money</h3>
-            <p style={{ fontSize: 14, opacity: 0.8, lineHeight: 1.6 }}>Vos acheteurs paient par carte bancaire, Orange Money, Moov Money ou Wave.</p>
-          </div>
         </div>
       </section>
     </div>
