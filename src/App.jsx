@@ -398,6 +398,79 @@ function Stamp({ text, color = "var(--green)", icon = "✓" }) {
   );
 }
 
+function AbstractShapes() {
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 400 160" preserveAspectRatio="xMaxYMid slice" style={{ position: "absolute", inset: 0, opacity: 0.9 }}>
+      <rect x="300" y="10" width="34" height="34" rx="6" fill="#5B8DEF" opacity="0.6" />
+      <rect x="345" y="55" width="26" height="26" rx="6" fill="#EF9F5B" opacity="0.7" />
+      <circle cx="365" cy="20" r="14" fill="#7ED4C4" opacity="0.7" />
+      <path d="M300 90 L330 90 L330 120 Z" fill="#F2C879" opacity="0.7" />
+      <rect x="250" y="100" width="24" height="24" rx="5" fill="#fff" opacity="0.25" transform="rotate(20 262 112)" />
+      <rect x="220" y="20" width="20" height="20" rx="5" fill="#fff" opacity="0.2" transform="rotate(-15 230 30)" />
+    </svg>
+  );
+}
+
+function Illustration({ kind, size = 64 }) {
+  const scenes = {
+    scan: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <rect x="10" y="6" width="30" height="40" rx="3" fill="#fff" opacity="0.95" />
+        <line x1="16" y1="16" x2="34" y2="16" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1="16" y1="24" x2="34" y2="24" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" opacity="0.6" />
+        <line x1="16" y1="32" x2="28" y2="32" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" opacity="0.6" />
+        <rect x="26" y="30" width="30" height="26" rx="4" fill="var(--gold)" />
+        <circle cx="41" cy="43" r="7" fill="#fff" opacity="0.9" />
+        <circle cx="41" cy="43" r="3.4" fill="var(--gold)" />
+        <rect x="34" y="32" width="4" height="4" rx="1" fill="#fff" />
+      </svg>
+    ),
+    catalog: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <rect x="8" y="14" width="20" height="26" rx="3" fill="#fff" opacity="0.95" transform="rotate(-8 18 27)" />
+        <rect x="24" y="10" width="20" height="30" rx="3" fill="#fff" />
+        <line x1="29" y1="18" x2="39" y2="18" stroke="var(--gold)" strokeWidth="2.2" strokeLinecap="round" />
+        <line x1="29" y1="24" x2="39" y2="24" stroke="var(--gold)" strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />
+        <circle cx="44" cy="42" r="11" fill="none" stroke="var(--gold)" strokeWidth="3.2" />
+        <line x1="52" y1="50" x2="59" y2="57" stroke="var(--gold)" strokeWidth="3.2" strokeLinecap="round" />
+      </svg>
+    ),
+    sell: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="30" r="22" fill="#fff" opacity="0.15" />
+        <circle cx="32" cy="30" r="17" fill="#fff" opacity="0.95" />
+        <text x="32" y="37" textAnchor="middle" fontSize="16" fontWeight="800" fill="var(--gold)">%</text>
+        <path d="M14 50c4-6 32-6 36 0" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+      </svg>
+    ),
+    cours: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <rect x="12" y="10" width="40" height="30" rx="4" fill="#fff" opacity="0.95" />
+        <line x1="18" y1="18" x2="46" y2="18" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" />
+        <line x1="18" y1="25" x2="46" y2="25" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" opacity="0.6" />
+        <line x1="18" y1="32" x2="34" y2="32" stroke="var(--gold)" strokeWidth="2.4" strokeLinecap="round" opacity="0.6" />
+        <rect x="12" y="44" width="40" height="6" rx="3" fill="#fff" opacity="0.5" />
+      </svg>
+    ),
+    livre: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <path d="M14 14c6-4 14-4 18 0v34c-4-4-12-4-18 0V14Z" fill="#fff" opacity="0.95" />
+        <path d="M50 14c-6-4-14-4-18 0v34c4-4 12-4 18 0V14Z" fill="#fff" opacity="0.75" />
+        <line x1="32" y1="14" x2="32" y2="48" stroke="var(--gold)" strokeWidth="1.6" opacity="0.5" />
+      </svg>
+    ),
+    service: (
+      <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+        <circle cx="24" cy="26" r="10" fill="#fff" opacity="0.95" />
+        <circle cx="42" cy="30" r="8" fill="#fff" opacity="0.7" />
+        <path d="M10 50c2-9 10-13 14-13s12 4 14 13" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.9" fill="none" />
+        <path d="M34 50c2-7 8-10 10-10" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity="0.6" fill="none" />
+      </svg>
+    ),
+  };
+  return scenes[kind] || scenes.cours;
+}
+
 function Logo({ size = 28 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -482,14 +555,15 @@ function CourseCard({ course, onOpen, onAdd, inCart }) {
 function Home({ go, courses, openCatalog }) {
   const top = courses.slice(0, 3);
   const articles = [
-    { icon: "📖", tag: "Découvrir", title: "Comment fonctionne Cartable ?", text: "Scannez, publiez, vendez : le principe en 3 étapes simples entre étudiants.", action: () => go("how") },
-    { icon: "🔎", tag: "Trouver un cours", title: "Parcourir tout le catalogue", text: "Des cours vérifiés par filière, pays et université, prêts à télécharger.", action: () => openCatalog("tous") },
-    { icon: "💶", tag: "Vendre", title: "Publier votre premier cours", text: "Photographiez vos pages, fixez votre prix, gardez 90% de chaque vente.", action: () => go("scan") },
+    { kind: "scan", tag: "Découvrir", title: "Comment fonctionne Cartable ?", text: "Scannez, publiez, vendez : le principe en 3 étapes simples entre étudiants.", action: () => go("how") },
+    { kind: "catalog", tag: "Trouver un cours", title: "Parcourir tout le catalogue", text: "Des cours vérifiés par filière, pays et université, prêts à télécharger.", action: () => openCatalog("tous") },
+    { kind: "sell", tag: "Vendre", title: "Publier votre premier cours", text: "Photographiez vos pages, fixez votre prix, gardez 90% de chaque vente.", action: () => go("scan") },
   ];
   return (
     <div>
-      <div style={{ background: "var(--gold)", color: "#fff", padding: "14px 6vw" }}>
-        <span style={{ fontSize: 13.5, fontWeight: 600 }}>
+      <div style={{ background: "var(--gold)", color: "#fff", padding: "16px 6vw", position: "relative", overflow: "hidden" }}>
+        <AbstractShapes />
+        <span style={{ fontSize: 13.5, fontWeight: 600, position: "relative" }}>
           📣 Nouveau — les étudiants peuvent maintenant ajouter leur propre filière.{" "}
           <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("how")}>En savoir plus →</span>
         </span>
@@ -537,7 +611,9 @@ function Home({ go, courses, openCatalog }) {
               style={{ padding: 24, cursor: "pointer", display: "flex", gap: 16, alignItems: "flex-start" }}
               onClick={() => openCatalog(t.id)}
             >
-              <span style={{ fontSize: 32 }}>{t.icon}</span>
+              <div style={{ width: 60, height: 60, borderRadius: 14, background: "var(--gold)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Illustration kind={t.id} size={36} />
+              </div>
               <div>
                 <h3 className="ctb-display" style={{ fontSize: 17, fontWeight: 800, margin: "0 0 6px", color: "var(--gold)" }}>{t.label}</h3>
                 <p style={{ fontSize: 13, color: "var(--ink-light)", lineHeight: 1.5, margin: 0 }}>{t.desc}</p>
@@ -579,7 +655,7 @@ function Home({ go, courses, openCatalog }) {
                   fontSize: 48,
                 }}
               >
-                {a.icon}
+                <Illustration kind={a.kind} size={52} />
               </div>
               <div style={{ padding: 20 }}>
                 <span className="ctb-mono" style={{ fontSize: 11, color: "var(--ink-light)", fontWeight: 700, letterSpacing: "0.04em" }}>
