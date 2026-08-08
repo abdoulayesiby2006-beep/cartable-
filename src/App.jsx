@@ -154,6 +154,8 @@ function mapDbCourseToLocal(row) {
   const details = [row.universite, row.pays].filter(Boolean).join(" · ");
   return {
     id: row.id,
+    vendeur_id: row.vendeur_id,
+    isReal: true,
     title: row.titre,
     type_annonce: row.type_annonce || "cours",
     filiere: row.filiere,
@@ -196,6 +198,32 @@ async function supaAddFiliere(accessToken, nom) {
   }
   return res.json();
 }
+
+/* ---------- Mes achats ---------- */
+async function supaListPurchases(accessToken) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/purchases?select=*,courses(titre,type_annonce,pdf_url)&statut_paiement=eq.paye&order=cree_le.desc`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` } }
+  );
+  if (!res.ok) return [];
+  return res.json();
+}
+
+async function supaGetDownloadUrl(accessToken, purchaseId) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/get-download-url`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ purchase_id: purchaseId }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.url) throw new Error(data.error || "Impossible de générer le lien de téléchargement.");
+  return data.url;
+}
+
 
 /* ---------------------------------------------------------
    CARTABLE — marketplace de cours entre étudiants
@@ -1267,8 +1295,74 @@ function Dashboard({ uploaded, go }) {
   );
 }
 
+function MesAchats({ currentUser, accessToken, go }) {
+  const [loading, setLoading] = useState(true);
+  const [purchases, setPurchases] = useState([]);
+  const [downloading, setDownloading] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    supaListPurchases(accessToken).then((p) => {
+      setPurchases(p);
+      setLoading(false);
+    });
+  }, []);
+
+  async function download(purchase) {
+    setError("");
+    setDownloading(purchase.id);
+    try {
+      const url = await supaGetDownloadUrl(accessToken, purchase.id);
+      window.open(url, "_blank");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDownloading(null);
+    }
+  }
+
+  return (
+    <div style={{ padding: "44px 6vw 90px", maxWidth: 700 }} className="ctb-fade-in">
+      <h1 className="ctb-display" style={{ fontSize: 28, fontWeight: 800, marginBottom: 24 }}>Mes achats</h1>
+      {loading ? (
+        <p style={{ color: "var(--ink-light)" }}>Chargement…</p>
+      ) : purchases.length === 0 ? (
+        <div className="ctb-card" style={{ padding: 32, textAlign: "center", color: "var(--ink-light)" }}>
+          Vous n'avez encore rien acheté. Vos cours, livres et services payés apparaîtront ici avec leur lien de téléchargement.
+          <div style={{ marginTop: 16 }}>
+            <button className="ctb-btn ctb-btn-primary" onClick={() => go("catalog")}>Parcourir le catalogue</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {purchases.map((p) => (
+            <div key={p.id} className="ctb-card" style={{ padding: 18, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{p.courses?.titre || "Annonce"}</div>
+                <div className="ctb-mono" style={{ fontSize: 11.5, color: "var(--ink-light)" }}>{fmt(p.montant_fcfa)} · {new Date(p.cree_le).toLocaleDateString("fr-FR")}</div>
+              </div>
+              {p.courses?.pdf_url ? (
+                <button className="ctb-btn ctb-btn-primary" style={{ fontSize: 13 }} onClick={() => download(p)} disabled={downloading === p.id}>
+                  {downloading === p.id ? "Un instant…" : "⬇ Télécharger le PDF"}
+                </button>
+              ) : (
+                <span className="ctb-mono" style={{ fontSize: 12, color: "var(--ink-light)" }}>Service — contactez le vendeur</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {error && (
+        <p style={{ color: "#fff", background: "var(--error)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginTop: 16, fontWeight: 600 }}>⚠️ {error}</p>
+      )}
+    </div>
+  );
+}
+
 function Cart({ cart, onRemove, go, onCheckout }) {
-  const total = cart.reduce((s, c) => s + c.prix, 0);
+  const realItems = cart.filter((c) => c.isReal);
+  const demoItems = cart.filter((c) => !c.isReal);
+  const total = realItems.reduce((s, c) => s + c.prix, 0);
   return (
     <div style={{ padding: "44px 6vw 90px", maxWidth: 640 }} className="ctb-fade-in">
       <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 700, marginBottom: 24 }}>Panier</h1>
@@ -1281,23 +1375,30 @@ function Cart({ cart, onRemove, go, onCheckout }) {
         </div>
       ) : (
         <>
+          {demoItems.length > 0 && (
+            <p style={{ fontSize: 12.5, color: "var(--ink-light)", background: "var(--paper2)", padding: "10px 14px", borderRadius: 10, marginBottom: 16 }}>
+              ℹ️ {demoItems.length} article(s) de démonstration dans votre panier ne peuvent pas être achetés (ce sont des exemples, pas de vrais cours publiés) — ils ne seront pas comptés au paiement.
+            </p>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
             {cart.map((c) => (
-              <div key={c.id} className="ctb-card" style={{ padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div key={c.id} className="ctb-card" style={{ padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", opacity: c.isReal ? 1 : 0.6 }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{c.title}</div>
+                  <div style={{ fontWeight: 600, fontSize: 14.5 }}>{c.title} {!c.isReal && <span className="ctb-mono" style={{ fontSize: 10.5 }}>(exemple)</span>}</div>
                   <div className="ctb-mono" style={{ fontSize: 11.5, color: "var(--ink-light)" }}>{c.filiere}</div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <span className="ctb-mono" style={{ fontWeight: 700 }}>{fmt(c.prix)}</span>
-                  <span style={{ cursor: "pointer", color: "var(--coral)", fontSize: 13 }} onClick={() => onRemove(c.id)}>Retirer</span>
+                  <span style={{ cursor: "pointer", color: "var(--error)", fontSize: 13 }} onClick={() => onRemove(c.id)}>Retirer</span>
                 </div>
               </div>
             ))}
           </div>
           <div className="ctb-card" style={{ padding: 20, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="ctb-display" style={{ fontSize: 20, fontWeight: 700 }}>Total : {fmt(total)}</span>
-            <button className="ctb-btn ctb-btn-primary" onClick={onCheckout}>Passer au paiement</button>
+            <button className="ctb-btn ctb-btn-primary" onClick={() => onCheckout(realItems)} disabled={realItems.length === 0}>
+              Passer au paiement
+            </button>
           </div>
         </>
       )}
@@ -1305,15 +1406,48 @@ function Cart({ cart, onRemove, go, onCheckout }) {
   );
 }
 
-function Checkout({ cart, go, onPaid }) {
+function Checkout({ items, currentUser, accessToken, go, onPaid }) {
+  const cart = items || [];
   const total = cart.reduce((s, c) => s + c.prix, 0);
-  const [method, setMethod] = useState("orange");
-  const [phase, setPhase] = useState("select"); // select -> paying -> done
-  const selected = PAYMENT_METHODS.find((m) => m.id === method);
+  const [phase, setPhase] = useState("select"); // select -> paying -> error
+  const [error, setError] = useState("");
 
-  function pay() {
+  async function pay() {
+    setError("");
     setPhase("paying");
-    setTimeout(() => { setPhase("done"); onPaid(); }, 1400);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          total_amount: total,
+          buyer_id: currentUser.id,
+          items: cart.map((c) => ({ course_id: c.id, vendeur_id: c.vendeur_id, prix_fcfa: c.prix, title: c.title })),
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Impossible de créer le paiement.");
+      }
+    } catch (err) {
+      setError(err.message);
+      setPhase("select");
+    }
+  }
+
+  if (cart.length === 0) {
+    return (
+      <div style={{ padding: "90px 6vw", textAlign: "center" }} className="ctb-fade-in">
+        <p style={{ color: "var(--ink-light)" }}>Aucun article à payer.</p>
+        <button className="ctb-btn ctb-btn-primary" style={{ marginTop: 16 }} onClick={() => go("catalog")}>Retour au catalogue</button>
+      </div>
+    );
   }
 
   return (
@@ -1325,72 +1459,15 @@ function Checkout({ cart, go, onPaid }) {
           <div className="ctb-card" style={{ padding: 20, marginBottom: 20 }}>
             <span className="ctb-mono" style={{ fontSize: 11, color: "var(--ink-light)" }}>MONTANT À PAYER</span>
             <div className="ctb-display" style={{ fontSize: 28, fontWeight: 700 }}>{fmt(total)}</div>
+            <p style={{ fontSize: 12.5, color: "var(--ink-light)", marginTop: 6 }}>
+              {cart.length} article(s) · paiement sécurisé par carte bancaire sur la page suivante
+            </p>
           </div>
-
-          <p style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 10 }}>Mobile Money</p>
-          <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-            {PAYMENT_METHODS.filter((m) => m.group === "mobile").map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMethod(m.id)}
-                className="ctb-btn"
-                style={{
-                  borderRadius: 12,
-                  padding: "12px 16px",
-                  fontSize: 13.5,
-                  border: method === m.id ? "2px solid var(--ink)" : "1.5px solid var(--line)",
-                  background: "#fff",
-                }}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
-
-          <p style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 10 }}>Carte bancaire</p>
-          <button
-            onClick={() => setMethod("carte")}
-            className="ctb-btn"
-            style={{
-              borderRadius: 12,
-              padding: "12px 16px",
-              fontSize: 13.5,
-              border: method === "carte" ? "2px solid var(--ink)" : "1.5px solid var(--line)",
-              background: "#fff",
-              marginBottom: 22,
-            }}
-          >
-            Visa / Mastercard
-          </button>
-
-          {selected?.group === "mobile" ? (
-            <div className="ctb-card" style={{ padding: 18, marginBottom: 22 }}>
-              <label>
-                <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
-                  Numéro {selected.label}
-                </span>
-                <input className="ctb-input" placeholder="+223 XX XX XX XX" />
-              </label>
-            </div>
-          ) : (
-            <div className="ctb-card" style={{ padding: 18, marginBottom: 22, display: "flex", flexDirection: "column", gap: 12 }}>
-              <label>
-                <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Numéro de carte</span>
-                <input className="ctb-input" placeholder="0000 0000 0000 0000" />
-              </label>
-              <div style={{ display: "flex", gap: 12 }}>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Expiration</span>
-                  <input className="ctb-input" placeholder="MM/AA" />
-                </label>
-                <label style={{ flex: 1 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>CVC</span>
-                  <input className="ctb-input" placeholder="123" />
-                </label>
-              </div>
-            </div>
+          {error && (
+            <p style={{ color: "#fff", background: "var(--error)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 16, fontWeight: 600 }}>
+              ⚠️ {error}
+            </p>
           )}
-
           <button className="ctb-btn ctb-btn-primary" style={{ width: "100%", padding: "14px" }} onClick={pay}>
             Payer {fmt(total)}
           </button>
@@ -1399,21 +1476,10 @@ function Checkout({ cart, go, onPaid }) {
 
       {phase === "paying" && (
         <div className="ctb-card" style={{ padding: 40, textAlign: "center" }}>
-          <p style={{ fontWeight: 600 }}>Traitement du paiement via {selected?.label}…</p>
+          <p style={{ fontWeight: 600 }}>Redirection vers la page de paiement sécurisée…</p>
           <div className="ctb-progress-track" style={{ marginTop: 18 }}>
             <div className="ctb-progress-fill" style={{ width: "100%", transition: "width 1.2s ease" }} />
           </div>
-        </div>
-      )}
-
-      {phase === "done" && (
-        <div className="ctb-card" style={{ padding: 36, textAlign: "center" }}>
-          <Stamp text="Paiement confirmé" />
-          <h3 className="ctb-display" style={{ fontSize: 22, margin: "16px 0 8px" }}>Merci pour votre achat</h3>
-          <p style={{ color: "var(--ink-light)", fontSize: 14, marginBottom: 22 }}>
-            Vos PDF sont disponibles au téléchargement immédiatement.
-          </p>
-          <button className="ctb-btn ctb-btn-primary" onClick={() => go("catalog")}>Retour au catalogue</button>
         </div>
       )}
     </div>
@@ -1770,6 +1836,7 @@ export default function App() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [catalogTypeFilter, setCatalogTypeFilter] = useState("tous");
+  const [checkoutItems, setCheckoutItems] = useState([]);
   const [consentGiven, setConsentGiven] = useState(false);
 
   function openCatalog(type) {
@@ -1893,6 +1960,12 @@ export default function App() {
                     >
                       📊 Mon espace vendeur
                     </div>
+                    <div
+                      style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600 }}
+                      onClick={() => { setShowProfileMenu(false); go("achats"); }}
+                    >
+                      🧾 Mes achats
+                    </div>
                     <div style={{ height: 1, background: "var(--line)", margin: "6px 0" }} />
                     <div
                       style={{ padding: "10px 12px", borderRadius: 8, cursor: "pointer", fontSize: 13.5, fontWeight: 600, color: "var(--error)" }}
@@ -2001,8 +2074,17 @@ export default function App() {
               <button className="ctb-btn ctb-btn-primary" onClick={() => setShowAuthModal(true)}>Se connecter</button>
             </div>
           ))}
-        {view === "cart" && <Cart cart={cart} onRemove={removeFromCart} go={go} onCheckout={() => go("checkout")} />}
-        {view === "checkout" && <Checkout cart={cart} go={go} onPaid={() => setCart([])} />}
+        {view === "cart" && <Cart cart={cart} onRemove={removeFromCart} go={go} onCheckout={(items) => { setCheckoutItems(items); go("checkout"); }} />}
+        {view === "checkout" && <Checkout items={checkoutItems} currentUser={currentUser} accessToken={accessToken} go={go} onPaid={() => setCart([])} />}
+        {view === "achats" &&
+          (currentUser ? (
+            <MesAchats currentUser={currentUser} accessToken={accessToken} go={go} />
+          ) : (
+            <div style={{ padding: "90px 6vw", textAlign: "center" }} className="ctb-fade-in">
+              <p style={{ fontWeight: 600, marginBottom: 16, fontSize: 16 }}>Connectez-vous pour voir vos achats.</p>
+              <button className="ctb-btn ctb-btn-primary" onClick={() => setShowAuthModal(true)}>Se connecter</button>
+            </div>
+          ))}
       </main>
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onAuthed={handleAuthed} />}
