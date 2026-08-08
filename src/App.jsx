@@ -1420,7 +1420,7 @@ function Checkout({ cart, go, onPaid }) {
   );
 }
 
-function ConsentBanner({ onAccept }) {
+function ConsentBanner({ onAccept, go }) {
   const [checked, setChecked] = useState(false);
   return (
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 100, background: "var(--ink)", color: "#fff", padding: "18px 6vw", boxShadow: "0 -4px 20px rgba(0,0,0,0.2)" }}>
@@ -1430,9 +1430,12 @@ function ConsentBanner({ onAccept }) {
           <p style={{ fontSize: 13, opacity: 0.85, lineHeight: 1.5, marginBottom: 10 }}>
             Cartable utilise des cookies nécessaires au fonctionnement du site (connexion, panier) et vous demande de confirmer que vous avez pris connaissance de nos règles d'utilisation avant de continuer.
           </p>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", flexWrap: "wrap" }}>
             <input type="checkbox" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
-            J'ai lu et j'accepte les conditions d'utilisation et la politique de cookies
+            J'ai lu et j'accepte les{" "}
+            <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("cgu")}>conditions d'utilisation</span>
+            {" "}et la{" "}
+            <span style={{ textDecoration: "underline", cursor: "pointer" }} onClick={() => go("confidentialite")}>politique de confidentialité</span>
           </label>
         </div>
         <button
@@ -1445,6 +1448,74 @@ function ConsentBanner({ onAccept }) {
         </button>
       </div>
     </div>
+  );
+}
+
+function LegalPage({ title, updated, sections, go }) {
+  return (
+    <div style={{ padding: "44px 6vw 90px", maxWidth: 760 }} className="ctb-fade-in">
+      <span className="ctb-nav-link" onClick={() => go("home")}>← Retour à l'accueil</span>
+      <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 800, margin: "16px 0 6px" }}>{title}</h1>
+      <p style={{ fontSize: 13, color: "var(--ink-light)", marginBottom: 30 }}>Dernière mise à jour : {updated}</p>
+      {sections.map(([h, body]) => (
+        <div key={h} style={{ marginBottom: 26 }}>
+          <h3 className="ctb-display" style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, color: "var(--gold)" }}>{h}</h3>
+          <p style={{ fontSize: 14.5, lineHeight: 1.7, color: "var(--ink-light)", whiteSpace: "pre-line" }}>{body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MentionsLegales({ go }) {
+  return (
+    <LegalPage
+      go={go}
+      title="Mentions légales"
+      updated="août 2026"
+      sections={[
+        ["Éditeur du site", "Cartable est édité à titre individuel par Abdoulaye Siby, étudiant, joignable à l'adresse indiquée sur la page de contact. Cartable n'est pas, à ce stade, une société immatriculée."],
+        ["Hébergement", "Le site est hébergé par Vercel Inc., et la base de données par Supabase Inc. Ces prestataires peuvent traiter des données techniques de connexion conformément à leurs propres politiques."],
+        ["Propriété intellectuelle", "La marque « Cartable », le logo et le design du site sont la propriété de l'éditeur. Les cours, livres et descriptions de services publiés par les utilisateurs restent la propriété de leurs auteurs respectifs ; leur mise en vente sur la plateforme n'emporte aucun transfert de propriété intellectuelle à Cartable."],
+        ["Contact", "Pour toute question relative au site, vous pouvez nous contacter via l'adresse e-mail de support indiquée dans votre espace profil."],
+      ]}
+    />
+  );
+}
+
+function CGU({ go }) {
+  return (
+    <LegalPage
+      go={go}
+      title="Conditions Générales d'Utilisation"
+      updated="août 2026"
+      sections={[
+        ["1. Objet", "Les présentes conditions régissent l'utilisation de Cartable, plateforme permettant à des étudiants de vendre et d'acheter des cours, des livres et des services entre eux."],
+        ["2. Inscription", "L'inscription est ouverte à toute personne disposant d'une adresse e-mail valide. L'utilisateur s'engage à fournir des informations exactes et à conserver la confidentialité de son mot de passe."],
+        ["3. Contenu déposé par les vendeurs", "Chaque vendeur est seul responsable du contenu qu'il publie (cours, livres, description de service) et garantit disposer des droits nécessaires pour le proposer à la vente. Cartable se réserve le droit de retirer tout contenu signalé comme illicite ou contrefaisant."],
+        ["4. Commission et paiement", "Cartable prélève une commission de 10% sur chaque vente réalisée sur la plateforme. Le vendeur perçoit les 90% restants selon le ou les moyens de paiement qu'il a renseignés dans son profil."],
+        ["5. Responsabilité", "Cartable agit en tant qu'intermédiaire technique entre acheteurs et vendeurs et ne garantit pas la qualité pédagogique du contenu vendu. Tout litige relatif au contenu d'un cours doit d'abord être traité entre l'acheteur et le vendeur."],
+        ["6. Résiliation", "Tout utilisateur peut cesser d'utiliser la plateforme à tout moment. Cartable se réserve le droit de suspendre un compte en cas de non-respect des présentes conditions."],
+        ["7. Droit applicable", "Les présentes conditions sont, à titre indicatif, soumises au droit malien. En cas d'usage international, le droit applicable pourra être précisé ultérieurement."],
+      ]}
+    />
+  );
+}
+
+function Confidentialite({ go }) {
+  return (
+    <LegalPage
+      go={go}
+      title="Politique de confidentialité"
+      updated="août 2026"
+      sections={[
+        ["Données collectées", "Cartable collecte votre adresse e-mail, votre nom, et, si vous le renseignez, votre pays, votre université et vos numéros de moyens de paiement (Orange Money, Moov Money, Wave, coordonnées bancaires) pour vous permettre de recevoir vos ventes."],
+        ["Utilisation des données", "Ces données sont utilisées uniquement pour faire fonctionner votre compte, afficher vos annonces, et vous reverser le produit de vos ventes. Elles ne sont ni vendues ni partagées à des fins publicitaires."],
+        ["Conservation", "Vos données sont conservées tant que votre compte est actif. Vous pouvez demander leur suppression à tout moment en nous contactant."],
+        ["Vos droits", "Conformément aux principes de protection des données, vous disposez d'un droit d'accès, de rectification et de suppression de vos données personnelles."],
+        ["Cookies", "Cartable utilise uniquement des cookies techniques nécessaires au fonctionnement du site (maintien de la connexion, panier). Aucun cookie publicitaire ou de traçage tiers n'est utilisé à ce stade."],
+      ]}
+    />
   );
 }
 
@@ -1864,6 +1935,9 @@ export default function App() {
       <main>
         {view === "home" && <Home go={go} courses={allCourses} openCatalog={openCatalog} />}
         {view === "how" && <HowItWorks go={go} />}
+        {view === "mentions" && <MentionsLegales go={go} />}
+        {view === "cgu" && <CGU go={go} />}
+        {view === "confidentialite" && <Confidentialite go={go} />}
         {view === "catalog" && (
           <Catalog
             go={go}
@@ -1932,14 +2006,22 @@ export default function App() {
       </main>
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onAuthed={handleAuthed} />}
-      {!consentGiven && <ConsentBanner onAccept={() => setConsentGiven(true)} />}
+      {!consentGiven && <ConsentBanner onAccept={() => setConsentGiven(true)} go={go} />}
 
       <footer style={{ borderTop: "1px solid var(--line)", padding: "36px 6vw", marginTop: 40 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <Logo size={18} />
-          <span style={{ fontSize: 12.5, color: "var(--ink-light)" }}>
-            © 2026 Cartable — Le marché des cours entre étudiants.
-          </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 24 }}>
+          <div>
+            <Logo size={18} />
+            <span style={{ fontSize: 12.5, color: "var(--ink-light)", display: "block", marginTop: 10 }}>
+              © 2026 Cartable — Le marché des cours entre étudiants.
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            <span className="ctb-nav-link" style={{ fontSize: 12.5 }} onClick={() => go("mentions")}>Mentions légales</span>
+            <span className="ctb-nav-link" style={{ fontSize: 12.5 }} onClick={() => go("cgu")}>CGU</span>
+            <span className="ctb-nav-link" style={{ fontSize: 12.5 }} onClick={() => go("confidentialite")}>Confidentialité</span>
+            <span className="ctb-nav-link" style={{ fontSize: 12.5 }} onClick={() => go("how")}>Comment ça marche</span>
+          </div>
         </div>
       </footer>
     </div>
