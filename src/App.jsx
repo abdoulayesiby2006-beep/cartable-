@@ -323,10 +323,15 @@ const FONTS = `
 }
 .ctb-scan-box.drag{ border-color:var(--gold); background:var(--paper2); }
 
+.ctb-mobile-menu-btn{ display:none; }
+.ctb-mobile-panel{ display:none; }
+
 @media (max-width: 720px){
   .ctb-hide-mobile{ display:none !important; }
   .ctb-grid-course{ grid-template-columns:1fr !important; }
   .ctb-hero-title{ font-size:38px !important; }
+  .ctb-mobile-menu-btn{ display:flex !important; }
+  .ctb-mobile-panel.open{ display:flex !important; }
 }
 `;
 
@@ -1692,6 +1697,7 @@ export default function App() {
   const [accessToken, setAccessToken] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileNav, setShowMobileNav] = useState(false);
   const [catalogTypeFilter, setCatalogTypeFilter] = useState("tous");
   const [consentGiven, setConsentGiven] = useState(false);
 
@@ -1831,7 +1837,27 @@ export default function App() {
                 Connexion
               </button>
             )}
+            <button
+              className="ctb-mobile-menu-btn ctb-btn ctb-btn-outline"
+              style={{ padding: "8px 12px", fontSize: 16, alignItems: "center", justifyContent: "center" }}
+              onClick={() => setShowMobileNav((s) => !s)}
+              aria-label="Menu"
+            >
+              {showMobileNav ? "✕" : "☰"}
+            </button>
           </div>
+        </div>
+        <div className={"ctb-mobile-panel" + (showMobileNav ? " open" : "")} style={{ flexDirection: "column", borderTop: "1px solid var(--line)", padding: "8px 6vw 14px" }}>
+          {navItems.map(([id, label]) => (
+            <span
+              key={id}
+              className="ctb-nav-link"
+              style={{ padding: "12px 4px", borderBottom: "1px solid var(--line)" }}
+              onClick={() => { setShowMobileNav(false); go(id); }}
+            >
+              {label}
+            </span>
+          ))}
         </div>
       </header>
 
