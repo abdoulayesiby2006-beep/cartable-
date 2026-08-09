@@ -172,6 +172,14 @@ function mapDbCourseToLocal(row) {
 }
 
 /* ---------- Filières vivantes : liste alimentée par les étudiants ---------- */
+async function supaListCourses() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/courses?statut=eq.publie&select=*&order=cree_le.desc`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 async function supaListFilieres() {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/filieres?select=nom&order=nom.asc`, {
     headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
@@ -759,13 +767,22 @@ function Home({ go, courses, openCatalog }) {
       <section style={{ background: "#fff", padding: "56px 6vw 80px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
           <h2 className="ctb-display" style={{ fontSize: 32, fontWeight: 800, color: "var(--ink)" }}>Les mieux notés</h2>
-          <span className="ctb-nav-link" onClick={() => go("catalog")}>Voir tout le catalogue →</span>
+          {top.length > 0 && <span className="ctb-nav-link" onClick={() => go("catalog")}>Voir tout le catalogue →</span>}
         </div>
-        <div className="ctb-grid-course" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-          {top.map((c) => (
-            <CourseCard key={c.id} course={c} onOpen={(course) => go("course", course)} onAdd={() => {}} />
-          ))}
-        </div>
+        {top.length === 0 ? (
+          <div className="ctb-card" style={{ padding: 36, textAlign: "center", color: "var(--ink-light)" }}>
+            Aucun cours publié pour l'instant — soyez le premier étudiant à en mettre un en ligne.
+            <div style={{ marginTop: 16 }}>
+              <button className="ctb-btn ctb-btn-primary" onClick={() => go("scan")}>Publier un cours</button>
+            </div>
+          </div>
+        ) : (
+          <div className="ctb-grid-course" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
+            {top.map((c) => (
+              <CourseCard key={c.id} course={c} onOpen={(course) => go("course", course)} onAdd={() => {}} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
@@ -846,7 +863,16 @@ function Catalog({ go, courses, cart, onAdd, filieresList, typeFilter, setTypeFi
           />
         ))}
         {filtered.length === 0 && (
-          <p style={{ color: "var(--ink-light)" }}>Aucun cours ne correspond à cette recherche.</p>
+          <div className="ctb-card" style={{ padding: 32, textAlign: "center", color: "var(--ink-light)" }}>
+            {courses.length === 0
+              ? "Aucun cours publié pour l'instant — soyez le premier étudiant à en mettre un en ligne."
+              : "Aucun cours ne correspond à cette recherche."}
+            {courses.length === 0 && (
+              <div style={{ marginTop: 16 }}>
+                <button className="ctb-btn ctb-btn-primary" onClick={() => go("scan")}>Publier un cours</button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -1906,7 +1932,18 @@ export default function App() {
     go("catalog");
   }
   const [filieresList, setFilieresList] = useState(FILIERES.filter((f) => f !== "Toutes"));
-  const allCourses = [...SEED_COURSES, ...uploaded];
+  const allCourses = uploaded;
+
+  useEffect(() => {
+    supaListCourses().then((rows) => {
+      if (rows.length === 0) return;
+      setUploaded((current) => {
+        const existingIds = new Set(current.map((c) => c.id));
+        const fresh = rows.filter((r) => !existingIds.has(r.id)).map(mapDbCourseToLocal);
+        return [...current, ...fresh];
+      });
+    });
+  }, []);
 
   useEffect(() => {
     supaListFilieres().then((remote) => {
