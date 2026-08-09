@@ -169,6 +169,30 @@ async function supaCreateCourse(accessToken, course) {
   return res.json();
 }
 
+async function supaDeleteCourse(accessToken, course) {
+  // on nettoie d'abord les fichiers associés (l'échec du nettoyage ne doit pas empêcher la suppression)
+  if (course.pdf_url) {
+    await fetch(`${SUPABASE_URL}/storage/v1/object/course-pdfs/${course.pdf_url}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+    }).catch(() => {});
+  }
+  if (course.apercu_url) {
+    await fetch(`${SUPABASE_URL}/storage/v1/object/course-previews/${course.apercu_url}`, {
+      method: "DELETE",
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+    }).catch(() => {});
+  }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/courses?id=eq.${course.id}`, {
+    method: "DELETE",
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Erreur lors de la suppression du cours.");
+  }
+}
+
 function mapDbCourseToLocal(row) {
   const details = [row.universite, row.pays].filter(Boolean).join(" · ");
   return {
@@ -176,6 +200,7 @@ function mapDbCourseToLocal(row) {
     vendeur_id: row.vendeur_id,
     isReal: true,
     apercu_url: row.apercu_url || null,
+    pdf_url: row.pdf_url || null,
     title: row.titre,
     type_annonce: row.type_annonce || "cours",
     filiere: row.filiere,
@@ -1367,12 +1392,31 @@ function PublishService({ addUploadedCourse, go, currentUser, accessToken, onReq
   );
 }
 
-function Dashboard({ uploaded, go }) {
+function Dashboard({ uploaded, go, currentUser, accessToken, onDelete }) {
   const { fmt } = useCurrency();
-  const totalVentes = uploaded.reduce((s, c) => s + c.ventes, 0);
-  const totalBrut = uploaded.reduce((s, c) => s + c.ventes * c.prix, 0);
+  const mine = uploaded.filter((c) => c.vendeur_id === currentUser.id);
+  const totalVentes = mine.reduce((s, c) => s + c.ventes, 0);
+  const totalBrut = mine.reduce((s, c) => s + c.ventes * c.prix, 0);
   const commission = Math.round(totalBrut * 0.1);
   const net = totalBrut - commission;
+  const [confirmId, setConfirmId] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+  const [error, setError] = useState("");
+
+  async function handleDelete(course) {
+    setDeleting(course.id);
+    setError("");
+    try {
+      await supaDeleteCourse(accessToken, course);
+      onDelete(course.id);
+      setConfirmId(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeleting(null);
+    }
+  }
+
   return (
     <div style={{ padding: "44px 6vw 90px" }} className="ctb-fade-in">
       <h1 className="ctb-display" style={{ fontSize: 30, fontWeight: 700, marginBottom: 24 }}>Mon espace vendeur</h1>
@@ -1399,19 +1443,38 @@ function Dashboard({ uploaded, go }) {
         </button>
       </div>
 
-      {uploaded.length === 0 ? (
+      {error && (
+        <p style={{ color: "#fff", background: "var(--error)", padding: "10px 14px", borderRadius: 10, fontSize: 13, marginBottom: 14, fontWeight: 600 }}>⚠️ {error}</p>
+      )}
+
+      {mine.length === 0 ? (
         <div className="ctb-card" style={{ padding: 32, textAlign: "center", color: "var(--ink-light)" }}>
           Vous n'avez encore publié aucun cours. C'est une invitation, pas un problème — lancez le scanner.
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {uploaded.map((c) => (
+          {mine.map((c) => (
             <div key={c.id} className="ctb-card" style={{ padding: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14.5 }}>{c.title}</div>
                 <div className="ctb-mono" style={{ fontSize: 11.5, color: "var(--ink-light)" }}>{c.filiere} · {c.ventes} ventes</div>
               </div>
-              <div className="ctb-mono" style={{ fontWeight: 700 }}>{fmt(c.prix)}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <span className="ctb-mono" style={{ fontWeight: 700 }}>{fmt(c.prix)}</span>
+                {confirmId === c.id ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12.5, color: "var(--error)", fontWeight: 600 }}>Supprimer ?</span>
+                    <button className="ctb-btn" style={{ background: "var(--error)", color: "#fff", padding: "6px 12px", fontSize: 12.5, borderRadius: 8 }} onClick={() => handleDelete(c)} disabled={deleting === c.id}>
+                      {deleting === c.id ? "…" : "Oui"}
+                    </button>
+                    <button className="ctb-btn ctb-btn-outline" style={{ padding: "6px 12px", fontSize: 12.5 }} onClick={() => setConfirmId(null)}>
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  <span style={{ cursor: "pointer", color: "var(--error)", fontSize: 13 }} onClick={() => setConfirmId(c.id)}>🗑 Supprimer</span>
+                )}
+              </div>
             </div>
           ))}
         </div>
@@ -2038,6 +2101,9 @@ export default function App() {
   function addUploadedCourse(course) {
     setUploaded((u) => [{ ...course, ventes: Math.floor(Math.random() * 6) }, ...u]);
   }
+  function removeUploadedCourse(courseId) {
+    setUploaded((u) => u.filter((c) => c.id !== courseId));
+  }
 
   const navItems = [
     ["home", "Accueil"],
@@ -2196,7 +2262,7 @@ export default function App() {
         )}
         {view === "dashboard" &&
           (currentUser ? (
-            <Dashboard uploaded={uploaded} go={go} />
+            <Dashboard uploaded={uploaded} go={go} currentUser={currentUser} accessToken={accessToken} onDelete={removeUploadedCourse} />
           ) : (
             <div style={{ padding: "90px 6vw", textAlign: "center" }} className="ctb-fade-in">
               <p style={{ fontWeight: 600, marginBottom: 16, fontSize: 16 }}>
