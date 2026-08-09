@@ -132,6 +132,25 @@ async function supaUploadPdf(accessToken, userId, blob, filename) {
   return path;
 }
 
+async function supaUploadPreview(accessToken, userId, blob, filename) {
+  const path = `${userId}/${filename}`;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/course-previews/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/pdf",
+    },
+    body: blob,
+  });
+  if (!res.ok) return null; // l'aperçu n'est pas bloquant si ça échoue
+  return path;
+}
+
+function previewUrl(path) {
+  return `${SUPABASE_URL}/storage/v1/object/public/course-previews/${path}`;
+}
+
 async function supaCreateCourse(accessToken, course) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/courses`, {
     method: "POST",
@@ -156,6 +175,7 @@ function mapDbCourseToLocal(row) {
     id: row.id,
     vendeur_id: row.vendeur_id,
     isReal: true,
+    apercu_url: row.apercu_url || null,
     title: row.titre,
     type_annonce: row.type_annonce || "cours",
     filiere: row.filiere,
@@ -935,6 +955,15 @@ function CourseDetail({ course, onAdd, inCart, go }) {
           <div className="ctb-mono" style={{ fontSize: 11, color: "var(--ink-light)" }}>PRIX</div>
           <div className="ctb-display" style={{ fontSize: 30, fontWeight: 700, margin: "4px 0 4px" }}>{fmt(course.prix)}</div>
           <div style={{ fontSize: 12.5, color: "var(--ink-light)", marginBottom: 18 }}>Téléchargement immédiat après paiement</div>
+          {course.apercu_url && (
+            <button
+              className="ctb-btn ctb-btn-outline"
+              style={{ width: "100%", marginBottom: 10 }}
+              onClick={() => window.open(previewUrl(course.apercu_url), "_blank")}
+            >
+              👁 Voir un extrait gratuit
+            </button>
+          )}
           <button className="ctb-btn ctb-btn-primary" style={{ width: "100%" }} onClick={() => onAdd(course)}>
             {inCart ? "Déjà dans le panier ✓" : "Ajouter au panier"}
           </button>
@@ -997,10 +1026,14 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
       }
       setScanLabelIdx(1);
       const pdfBlob = await buildPdfFromImages(images);
+      setProgress(55);
+      const previewBlob = await buildPdfFromImages(images.slice(0, Math.min(2, images.length)));
+      let previewPath = null;
       setProgress(60);
       setScanLabelIdx(2);
       const filename = `cours-${Date.now()}.pdf`;
       const path = await supaUploadPdf(accessToken, currentUser.id, pdfBlob, filename);
+      previewPath = await supaUploadPreview(accessToken, currentUser.id, previewBlob, `apercu-${filename}`);
       setProgress(85);
       setScanLabelIdx(3);
       const created = await supaCreateCourse(accessToken, {
@@ -1014,6 +1047,7 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
         prix_fcfa: Number(prix) || 0,
         nombre_pages: images.length,
         pdf_url: path,
+        apercu_url: previewPath,
         statut: "publie",
       });
       setProgress(100);
