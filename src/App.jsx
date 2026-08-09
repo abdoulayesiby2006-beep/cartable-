@@ -421,6 +421,59 @@ function fmt(n) {
   return n.toLocaleString("fr-FR") + " FCFA";
 }
 
+/* ---------- Devise automatique selon le pays du visiteur ---------- */
+const ZERO_DECIMAL_CURRENCIES = new Set(["BIF","CLP","DJF","GNF","JPY","KMF","KRW","MGA","PYG","RWF","UGX","VND","VUV","XAF","XOF","XPF"]);
+const XOF_PER_EUR = 655.957; // parité fixe garantie par la France, jamais changeante
+
+const CurrencyContext = React.createContext({ code: "XOF", rate: 1 });
+
+function useCurrency() {
+  const { code, rate } = React.useContext(CurrencyContext);
+  function fmt(amountXof) {
+    if (code === "XOF" || !rate || rate === 1) {
+      return amountXof.toLocaleString("fr-FR") + " FCFA";
+    }
+    const converted = amountXof * rate;
+    try {
+      return new Intl.NumberFormat("fr-FR", { style: "currency", currency: code, maximumFractionDigits: 2 }).format(converted);
+    } catch {
+      return amountXof.toLocaleString("fr-FR") + " FCFA";
+    }
+  }
+  return { code, rate, fmt };
+}
+
+function useCurrencyDetection() {
+  const [currency, setCurrency] = useState({ code: "XOF", rate: 1 });
+  useEffect(() => {
+    let cancelled = false;
+    async function detect() {
+      try {
+        const geoRes = await fetch("https://ipapi.co/json/");
+        const geo = await geoRes.json();
+        const detected = geo?.currency;
+        if (!detected || detected === "XOF" || cancelled) return;
+        let rate;
+        if (detected === "EUR") {
+          rate = 1 / XOF_PER_EUR;
+        } else {
+          const fxRes = await fetch(`https://api.frankfurter.app/latest?from=EUR&to=${detected}`);
+          const fx = await fxRes.json();
+          const eurToTarget = fx?.rates?.[detected];
+          if (!eurToTarget) return;
+          rate = (1 / XOF_PER_EUR) * eurToTarget;
+        }
+        if (!cancelled) setCurrency({ code: detected, rate });
+      } catch {
+        // pas grave : on reste affiché en FCFA par défaut
+      }
+    }
+    detect();
+    return () => { cancelled = true; };
+  }, []);
+  return currency;
+}
+
 /* ---------- Small pieces ---------- */
 function Stamp({ text, color = "var(--green)", icon = "✓" }) {
   return (
@@ -536,6 +589,7 @@ function StarRow({ note }) {
 
 /* ---------- Course card ---------- */
 function CourseCard({ course, onOpen, onAdd, inCart }) {
+  const { fmt } = useCurrency();
   const typeInfo = TYPES.find((t) => t.id === course.type_annonce) || TYPES[0];
   return (
     <div
@@ -800,6 +854,7 @@ function Catalog({ go, courses, cart, onAdd, filieresList, typeFilter, setTypeFi
 }
 
 function CourseDetail({ course, onAdd, inCart, go }) {
+  const { fmt } = useCurrency();
   if (!course) return null;
   return (
     <div style={{ padding: "36px 6vw 80px", maxWidth: 980 }} className="ctb-fade-in">
@@ -864,6 +919,7 @@ function CourseDetail({ course, onAdd, inCart, go }) {
 }
 
 function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequireLogin, filieresList, addFiliere }) {
+  const { fmt } = useCurrency();
   const [step, setStep] = useState("upload"); // upload -> form -> processing -> done -> error
   const [files, setFiles] = useState([]);
   const [progress, setProgress] = useState(0);
@@ -1244,6 +1300,7 @@ function PublishService({ addUploadedCourse, go, currentUser, accessToken, onReq
 }
 
 function Dashboard({ uploaded, go }) {
+  const { fmt } = useCurrency();
   const totalVentes = uploaded.reduce((s, c) => s + c.ventes, 0);
   const totalBrut = uploaded.reduce((s, c) => s + c.ventes * c.prix, 0);
   const commission = Math.round(totalBrut * 0.1);
@@ -1296,6 +1353,7 @@ function Dashboard({ uploaded, go }) {
 }
 
 function MesAchats({ currentUser, accessToken, go }) {
+  const { fmt } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [purchases, setPurchases] = useState([]);
   const [downloading, setDownloading] = useState(null);
@@ -1360,6 +1418,7 @@ function MesAchats({ currentUser, accessToken, go }) {
 }
 
 function Cart({ cart, onRemove, go, onCheckout }) {
+  const { fmt } = useCurrency();
   const realItems = cart.filter((c) => c.isReal);
   const demoItems = cart.filter((c) => !c.isReal);
   const total = realItems.reduce((s, c) => s + c.prix, 0);
@@ -1407,6 +1466,7 @@ function Cart({ cart, onRemove, go, onCheckout }) {
 }
 
 function Checkout({ items, currentUser, accessToken, go, onPaid }) {
+  const { fmt, code, rate } = useCurrency();
   const cart = items || [];
   const total = cart.reduce((s, c) => s + c.prix, 0);
   const [phase, setPhase] = useState("select"); // select -> paying -> error
@@ -1424,8 +1484,9 @@ function Checkout({ items, currentUser, accessToken, go, onPaid }) {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          total_amount: total,
           buyer_id: currentUser.id,
+          currency: code,
+          rate,
           items: cart.map((c) => ({ course_id: c.id, vendeur_id: c.vendeur_id, prix_fcfa: c.prix, title: c.title })),
         }),
       });
@@ -1837,6 +1898,7 @@ export default function App() {
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [catalogTypeFilter, setCatalogTypeFilter] = useState("tous");
   const [checkoutItems, setCheckoutItems] = useState([]);
+  const currency = useCurrencyDetection();
   const [consentGiven, setConsentGiven] = useState(false);
 
   function openCatalog(type) {
@@ -1906,6 +1968,7 @@ export default function App() {
   ];
 
   return (
+    <CurrencyContext.Provider value={currency}>
     <div className="ctb-root">
       <style>{FONTS}</style>
 
@@ -2107,5 +2170,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </CurrencyContext.Provider>
   );
 }
