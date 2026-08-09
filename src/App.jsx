@@ -991,6 +991,7 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
   const [prix, setPrix] = useState(2000);
   const [error, setError] = useState("");
   const fileInput = useRef(null);
+  const cameraInput = useRef(null);
   const scanLabels = ["Lecture des pages", "Génération du PDF", "Envoi vers le stockage", "Publication du cours"];
 
   function confirmNewFiliere() {
@@ -1108,7 +1109,7 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
             ou utilisez l'appareil photo — chaque photo devient une page du PDF
           </p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <button className="ctb-btn ctb-btn-coral" onClick={(e) => { e.stopPropagation(); fileInput.current?.click(); }}>
+            <button className="ctb-btn ctb-btn-coral" onClick={(e) => { e.stopPropagation(); cameraInput.current?.click(); }}>
               📷 Prendre en photo
             </button>
             <button className="ctb-btn ctb-btn-outline" onClick={(e) => { e.stopPropagation(); fileInput.current?.click(); }}>
@@ -1116,10 +1117,17 @@ function ScanCourse({ addUploadedCourse, go, currentUser, accessToken, onRequire
             </button>
           </div>
           <input
-            ref={fileInput}
+            ref={cameraInput}
             type="file"
             accept="image/*"
             capture="environment"
+            style={{ display: "none" }}
+            onChange={(e) => pickFiles(e.target.files)}
+          />
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
             multiple
             style={{ display: "none" }}
             onChange={(e) => pickFiles(e.target.files)}
